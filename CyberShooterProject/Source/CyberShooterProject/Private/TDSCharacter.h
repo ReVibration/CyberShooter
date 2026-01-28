@@ -5,8 +5,10 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "TDSCharacter.generated.h"
-#include "InputActionValue.h"
 
+
+class UCameraComponent;
+class USpringArmComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
@@ -31,6 +33,13 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+
+	// --- Camera ---
+	UPROPERTY(VisibleAnywhere, Category = "Camera")
+	USpringArmComponent* SpringArm;
+
+	UPROPERTY(VisibleAnywhere, Category = "Camera")
+	UCameraComponent* Camera;
 
 	// --- Enhanced Input ---
 	// This is the mapping context for the controller
@@ -60,9 +69,11 @@ private:
 	float NextFireTime = 0.f;
 
 	// Called when the player want's to fire a projectile
-	void Fire();
+	void FirePressed(const FInputActionValue& Value);
 
 	// Called when the player want's to move
 	void Move(const FInputActionValue& Value);
+
+	void FaceMouseCursor();
 
 };

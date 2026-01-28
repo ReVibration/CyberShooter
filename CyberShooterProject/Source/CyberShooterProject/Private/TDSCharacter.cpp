@@ -3,7 +3,10 @@
 
 #include "TDSCharacter.h"
 
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SceneComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,34 +21,56 @@ ATDSCharacter::ATDSCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Top-Down Feel: no pitch/roll, rotate manually
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+
+	// Create the camera boom (spring arm)
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	SpringArm->SetupAttachment(RootComponent);
+	SpringArm->TargetArmLength = 900.0f;
+	SpringArm->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
+	SpringArm->bDoCollisionTest = false;
+
+	// Create the camera
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(SpringArm);
+
+	// Create the muzzle location
+	Muzzle = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
+	Muzzle->SetupAttachment(GetMesh() ? GetMesh() : RootComponent);
+	Muzzle->SetRelativeLocation(FVector(60.f, 0.f, 40.f));
+
+
 }
 
 // Called when the game starts or when spawned
 void ATDSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		if (ULocalPlayer* LP = PC->GetLocalPlayer())
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+			{
+				if (DefaultMappingContext)
+					// Add the mapping context
+					Subsystem->AddMappingContext(DefaultMappingContext, 0);
+
+			}
+		}
+		PC->bShowMouseCursor = true;
+		PC->DefaultMouseCursor = EMouseCursor::Crosshairs;
+	}
 	
 }
 
-// Fire a projectile
-void ATDSCharacter::Fire()
+void ATDSCharacter::Tick(float DeltaSeconds)
 {
-	// Make sure we have a projectile to spawn
-	if (!ProjectileClass) return;
-
-	// Calculate the spawn location
-	const FVector SpawnLocation = 
-		GetActorLocation() + GetActorForwardVector() * 80.f;
-
-	// Calculate the spawn rotation
-	const FRotator SpawnRotation = GetActorRotation();
-
-	// Spawn the projectile
-	GetWorld()->SpawnActor<AActor>(
-		ProjectileClass,
-		SpawnLocation,
-		SpawnRotation
-	);
+	Super::Tick(DeltaSeconds);
+	FaceMouseCursor();
 }
 
 // Called to bind functionality to input
@@ -79,7 +104,7 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 			FireAction,
 			ETriggerEvent::Triggered,
 			this,
-			&ATDSCharacter::Fire
+			&ATDSCharacter::FirePressed
 		);
 	}
 
@@ -97,4 +122,25 @@ void ATDSCharacter::Move(const FInputActionValue& Value)
 	// Add movement in that direction
 	AddMovementInput(GetActorForwardVector(), Input.Y);
 	AddMovementInput(GetActorRightVector(), Input.X);
+}
+
+// Fire a projectile
+void ATDSCharacter::FirePressed(const FInputActionValue& Value)
+{
+	// Make sure we have a projectile to spawn
+	if (!ProjectileClass) return;
+
+	// Calculate the spawn location
+	const FVector SpawnLocation =
+		GetActorLocation() + GetActorForwardVector() * 80.f;
+
+	// Calculate the spawn rotation
+	const FRotator SpawnRotation = GetActorRotation();
+
+	// Spawn the projectile
+	GetWorld()->SpawnActor<AActor>(
+		ProjectileClass,
+		SpawnLocation,
+		SpawnRotation
+	);
 }
