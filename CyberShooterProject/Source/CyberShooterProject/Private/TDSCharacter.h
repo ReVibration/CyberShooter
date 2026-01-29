@@ -41,6 +41,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	UCameraComponent* Camera;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Aiming")
+	float RotationSpeed = 2.f;
+
 	// --- Enhanced Input ---
 	// This is the mapping context for the controller
 	UPROPERTY(EditDefaultsOnly, Category="Input")
@@ -72,6 +75,7 @@ private:
 	void FirePressed(const FInputActionValue& Value);
 
 	// Called when the player want's to move
+	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
 	void FaceMouseCursor();

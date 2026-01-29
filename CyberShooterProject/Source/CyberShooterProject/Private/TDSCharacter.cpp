@@ -11,6 +11,8 @@
 #include "Components/SceneComponent.h"
 #include "Kismet/GameplayStatics.h"
 
+#include "Engine/World.h"
+
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
@@ -23,6 +25,8 @@ ATDSCharacter::ATDSCharacter()
 
 	// Top-Down Feel: no pitch/roll, rotate manually
 	bUseControllerRotationYaw = false;
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationRoll = false;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// Create the camera boom (spring arm)
@@ -32,14 +36,21 @@ ATDSCharacter::ATDSCharacter()
 	SpringArm->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
 	SpringArm->bDoCollisionTest = false;
 
+	SpringArm->bUsePawnControlRotation = false;
+	SpringArm->bInheritPitch = false;
+	SpringArm->bInheritYaw = false;
+	SpringArm->bInheritRoll = false;
+
 	// Create the camera
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
+	Camera->bUsePawnControlRotation = false;
 
 	// Create the muzzle location
-	Muzzle = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle"));
-	Muzzle->SetupAttachment(GetMesh() ? GetMesh() : RootComponent);
-	Muzzle->SetRelativeLocation(FVector(60.f, 0.f, 40.f));
+	const FVector SpawnLocation = Muzzle ? Muzzle->GetComponentLocation()
+		: GetActorLocation() + GetActorForwardVector() * 80.f;
+	const FRotator SpawnRotation = GetActorRotation();
+
 
 
 }
@@ -64,7 +75,7 @@ void ATDSCharacter::BeginPlay()
 		PC->bShowMouseCursor = true;
 		PC->DefaultMouseCursor = EMouseCursor::Crosshairs;
 	}
-	
+
 }
 
 void ATDSCharacter::Tick(float DeltaSeconds)
@@ -113,6 +124,7 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 // Called when the player wants to move
 void ATDSCharacter::Move(const FInputActionValue& Value)
 {
+
 	// Get the 2D movement vector
 	const FVector2D Input = Value.Get<FVector2D>();
 
@@ -120,8 +132,9 @@ void ATDSCharacter::Move(const FInputActionValue& Value)
 	if (Input.IsNearlyZero()) return;
 
 	// Add movement in that direction
-	AddMovementInput(GetActorForwardVector(), Input.Y);
-	AddMovementInput(GetActorRightVector(), Input.X);
+	AddMovementInput(FVector::ForwardVector, Input.Y);
+	AddMovementInput(FVector::RightVector, Input.X);
+
 }
 
 // Fire a projectile
@@ -143,4 +156,31 @@ void ATDSCharacter::FirePressed(const FInputActionValue& Value)
 		SpawnLocation,
 		SpawnRotation
 	);
+}
+
+void ATDSCharacter::FaceMouseCursor()
+{
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC) return;
+
+	FHitResult Hit;
+	if (!PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit))
+		return;
+
+	FVector ToTarget = Hit.ImpactPoint - GetActorLocation();
+	ToTarget.Z = 0.f; // keep rotation flat
+
+	if (ToTarget.IsNearlyZero())
+		return;
+
+	FRotator TargetRotation = ToTarget.Rotation();
+
+	FRotator SmoothedRotation = FMath::RInterpTo(
+		GetActorRotation(),
+		TargetRotation,
+		GetWorld()->GetDeltaSeconds(),
+		RotationSpeed
+	);
+
+	SetActorRotation(SmoothedRotation);
 }
