@@ -137,26 +137,23 @@ void ATDSCharacter::Move(const FInputActionValue& Value)
 
 }
 
-// Fire a projectile
 void ATDSCharacter::FirePressed(const FInputActionValue& Value)
 {
-	// Make sure we have a projectile to spawn
 	if (!ProjectileClass) return;
 
-	// Calculate the spawn location
-	const FVector SpawnLocation =
-		GetActorLocation() + GetActorForwardVector() * 80.f;
+	const FVector SpawnLocation = Muzzle ? Muzzle->GetComponentLocation()
+		: GetActorLocation() + GetActorForwardVector() * 80.f;
 
-	// Calculate the spawn rotation
 	const FRotator SpawnRotation = GetActorRotation();
 
-	// Spawn the projectile
-	GetWorld()->SpawnActor<AActor>(
-		ProjectileClass,
-		SpawnLocation,
-		SpawnRotation
-	);
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.Instigator = this;
+
+	// Creates the projectile at the muzzle facing where the player is facing ownership is set so damage is attributed correctly
+	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, Params);
 }
+
 
 void ATDSCharacter::FaceMouseCursor()
 {
