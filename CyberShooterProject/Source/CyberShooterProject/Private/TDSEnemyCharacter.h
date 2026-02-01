@@ -19,6 +19,22 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	// Health properties
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+	float MaxHealth = 100.f;
+
+	float CurrentHealth;
+
+	// Function to handle taking damage
+	UFUNCTION()
+	void HandleTakeAnyDamage(
+		AActor* DamagedActor,
+		float Damage,
+		const class UDamageType* DamageType,
+		class AController* InstigatedBy,
+		AActor* DamageCauser
+	);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

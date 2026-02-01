@@ -49,5 +49,9 @@ private:
 	// Lifetime of the projectile in seconds
     UPROPERTY(EditDefaultsOnly, Category = "Lifetime")
     float LifeSeconds = 2.0f;
+
+	// Damage dealt by the projectile
+	UPROPERTY(EditDefaultSOnly, Category = "Damage")
+	float Damage = 25.f;
 };
 

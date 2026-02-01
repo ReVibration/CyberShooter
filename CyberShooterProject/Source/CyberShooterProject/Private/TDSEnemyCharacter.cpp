@@ -3,6 +3,8 @@
 
 #include "TDSEnemyCharacter.h"
 
+#include "Engine/Engine.h"
+
 // Sets default values
 ATDSEnemyCharacter::ATDSEnemyCharacter()
 {
@@ -16,6 +18,11 @@ void ATDSEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// Initialize health
+	CurrentHealth = MaxHealth;
+
+	// Bind the OnTakeDamage function to handle damage events
+	OnTakeAnyDamage.AddDynamic(this, &ATDSEnemyCharacter::HandleTakeAnyDamage);
 }
 
 // Called every frame
@@ -32,3 +39,32 @@ void ATDSEnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 }
 
+void ATDSEnemyCharacter::HandleTakeAnyDamage(
+	AActor* DamagedActor,
+	float Damage,
+	const UDamageType* DamageType,
+	AController* InstigatedBy,
+	AActor* DamageCauser
+)
+{
+	// Reduce health by damage amount
+	CurrentHealth -= Damage;
+
+	// Debug: Print current health to the screen
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			1.f,
+			FColor::Red,
+			FString::Printf(TEXT("Enemy Health: %.0f"), CurrentHealth)
+		);
+	}
+
+	// Check for death
+	if (CurrentHealth <= 0.f)
+	{
+		// Handle enemy death (e.g., play animation, destroy actor, etc.)
+		Destroy();
+	}
+}

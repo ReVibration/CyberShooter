@@ -6,6 +6,8 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
 
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values
 ATDSProjectile::ATDSProjectile()
 {
@@ -68,15 +70,17 @@ void ATDSProjectile::OnHit(
     const FHitResult& Hit)
 {
     // Prevent self-hit / weird cases
-    if (!OtherActor || OtherActor == this) return;
+    if (!OtherActor || OtherActor == this || OtherActor == GetOwner()) return;
 
-    if (GEngine)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red,
-            FString::Printf(TEXT("Hit: %s"), *GetNameSafe(OtherActor)));
-    }
+    UGameplayStatics::ApplyDamage(
+        OtherActor,
+        Damage,
+        GetInstigatorController(),
+        this,
+        UDamageType::StaticClass()
+	);
 
     // Later: apply damage here
-    //Destroy();
+    Destroy();
 }
 
