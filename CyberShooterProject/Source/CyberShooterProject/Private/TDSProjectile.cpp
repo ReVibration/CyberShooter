@@ -70,7 +70,13 @@ void ATDSProjectile::OnHit(
     // Prevent self-hit / weird cases
     if (!OtherActor || OtherActor == this) return;
 
+    if (GEngine)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 2.f, FColor::Red,
+            FString::Printf(TEXT("Hit: %s"), *GetNameSafe(OtherActor)));
+    }
+
     // Later: apply damage here
-    Destroy();
+    //Destroy();
 }
 

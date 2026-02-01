@@ -33,6 +33,7 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	// ---------------- Components ----------------
 
 	// --- Camera ---
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
@@ -67,17 +68,28 @@ private:
 
 	// A property that can change the fire rate 
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
-	float FireRate = 8.f;
+	float FireRate = 0.12f;
+	// Timer handle to manage the firing rate
+	FTimerHandle FireTimerHandle;
+	// Whether the player is currently firing
+	bool bIsFiring = false;
 
-	float NextFireTime = 0.f;
-
-	// Called when the player want's to fire a projectile
-	void FirePressed(const FInputActionValue& Value);
+	// ---------------- Functions ----------------
 
 	// Called when the player want's to move
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
+	// Handles the rotation of the character to face the mouse cursor
 	void FaceMouseCursor();
 
+
+	// Handles starting the firing of projectiles
+	void StartFiring();
+
+	// Handles stopping the firing of projectiles
+	void StopFiring();
+
+	// Handles firing a single projectile
+	void FireOnce();
 };

@@ -108,16 +108,19 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		);
 	}
 
-	if (FireAction)
-	{
-		// Bind the fire action
-		EnhancedInputComponent->BindAction(
-			FireAction,
-			ETriggerEvent::Triggered,
-			this,
-			&ATDSCharacter::FirePressed
-		);
-	}
+	EnhancedInputComponent->BindAction(
+		FireAction,
+		ETriggerEvent::Started,
+		this,
+		&ATDSCharacter::StartFiring
+	);
+
+	EnhancedInputComponent->BindAction(
+		FireAction,
+		ETriggerEvent::Completed,
+		this,
+		&ATDSCharacter::StopFiring
+	);
 
 }
 
@@ -137,21 +140,55 @@ void ATDSCharacter::Move(const FInputActionValue& Value)
 
 }
 
-void ATDSCharacter::FirePressed(const FInputActionValue& Value)
+// Handles starting the firing of projectiles
+void ATDSCharacter::StartFiring()
 {
+	//  Avoid starting if already firing
+	if (bIsFiring) return;
+	// Set the firing flag
+	bIsFiring = true;
+
+	FireOnce(); // shoot immediately
+
+	// then keep firing repeatedly
+	GetWorldTimerManager().SetTimer(
+		FireTimerHandle,
+		this,
+		&ATDSCharacter::FireOnce,
+		FireRate,
+		true
+	);
+}
+
+void ATDSCharacter::StopFiring()
+{
+	// If not firing, do nothing
+	bIsFiring = false;
+	// Clear the timer
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+}
+
+void ATDSCharacter::FireOnce()
+{
+	// Make sure we have a projectile class to spawn
 	if (!ProjectileClass) return;
 
-	const FVector SpawnLocation = Muzzle ? Muzzle->GetComponentLocation()
-		: GetActorLocation() + GetActorForwardVector() * 80.f;
+	// Determine spawn location and rotation
+	const FVector SpawnLocation = Muzzle
+		? Muzzle->GetComponentLocation() + FVector(0, 0, 20)
+		: GetActorLocation() + GetActorForwardVector() * 80.f + FVector(0, 0, 20);
 
+	// Set spawn rotation to be the same as the character's rotation
 	const FRotator SpawnRotation = GetActorRotation();
 
+	// Set spawn parameters
 	FActorSpawnParameters Params;
 	Params.Owner = this;
 	Params.Instigator = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	// Creates the projectile at the muzzle facing where the player is facing ownership is set so damage is attributed correctly
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, Params);
+	// Spawn the projectile
+	AActor* Spawned = GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, Params);
 }
 
 
