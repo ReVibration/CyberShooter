@@ -5,6 +5,7 @@
 
 #include "Engine/Engine.h"
 #include "TDSEnemyAIController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 ATDSEnemyCharacter::ATDSEnemyCharacter()
@@ -12,8 +13,20 @@ ATDSEnemyCharacter::ATDSEnemyCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Set AI Controller class
 	AIControllerClass = ATDSEnemyAIController::StaticClass();
+	// Enable automatic AI possession
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+
+	// Configure the controlled character to use controller rotation for yaw
+	bUseControllerRotationYaw = true;
+
+	// Ensure the controlled character does not orient rotation to movement
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+
+	// Set rotation rate for smooth turning
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 
 }
 

@@ -12,6 +12,8 @@ void ATDSEnemyAIController::OnPossess(APawn* InPawn)
 
 	// Get reference to the player pawn
 	PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+
+
 }
 
 void ATDSEnemyAIController::Tick(float DeltaSeconds)
@@ -20,7 +22,15 @@ void ATDSEnemyAIController::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	// Ensure we have valid references
-	if (!PlayerPawn || !GetPawn()) { return; }
+	if (!PlayerPawn || !GetPawn()) 
+	{
+		// Try to get the player pawn if not already set
+		PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+		if (!PlayerPawn) return; 
+	}
+
+	// Always face the player
+	SetFocus(PlayerPawn);
 
 	// Calculate distance to player
 	const float Dist = FVector::Dist(PlayerPawn->GetActorLocation(), GetPawn()->GetActorLocation());
