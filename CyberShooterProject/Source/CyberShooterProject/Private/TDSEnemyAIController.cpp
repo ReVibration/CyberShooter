@@ -4,6 +4,7 @@
 #include "TDSEnemyAIController.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
+#include "TimerManager.h"
 
 void ATDSEnemyAIController::OnPossess(APawn* InPawn)
 {
@@ -29,18 +30,20 @@ void ATDSEnemyAIController::Tick(float DeltaSeconds)
 		if (!PlayerPawn) return; 
 	}
 
-	// Always face the player
-	SetFocus(PlayerPawn);
 
 	// Calculate distance to player
 	const float Dist = FVector::Dist(PlayerPawn->GetActorLocation(), GetPawn()->GetActorLocation());
 
-	// Decide whether to chase or stop based on distance
-	if (Dist <= StopDistance)
+	if(Dist <= AttackRange)
 	{
-		// Stop moving if within stop distance
-		StopMovement();
+		// Start attacking if within attack range
+		StartAttacking();
+		return;
 	}
+
+	// Stop attacking if out of range
+	StopAttacking();
+	
 	if (Dist <= ChaseDistance)
 	{
 		// Move towards the player if within chase distance
@@ -53,5 +56,62 @@ void ATDSEnemyAIController::Tick(float DeltaSeconds)
 	}
 }
 
-	
+void ATDSEnemyAIController::StartAttacking()
+{
+	// If already attacking, do nothing
+	if (bIsAttacking) return;
+	// Set attacking flag
+	bIsAttacking = true;
+
+	// Stop movement to attack
+	StopMovement();
+
+	// Perform the first attack immediately
+	DoMeleeAttack();
+
+	// Set timer for subsequent attacks
+	GetWorldTimerManager().SetTimer(
+		AttackTimerHandle,
+		this,
+		&ATDSEnemyAIController::DoMeleeAttack,
+		AttackInterval,
+		true
+	);
+}
+
+void ATDSEnemyAIController::StopAttacking()
+{
+	// Clear attacking flag
+	bIsAttacking = false;
+	// Clear the attack timer
+	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
+}
+
+void ATDSEnemyAIController::DoMeleeAttack()
+{
+	// Ensure we have valid references
+	if (!PlayerPawn || !GetPawn()) return;
+
+	// Calculate distance to player
+	const float Dist = FVector::Dist(PlayerPawn->GetActorLocation(), GetPawn()->GetActorLocation());
+
+	// If within attack range, apply damage
+	if (Dist <= AttackRange)
+	{
+		// Apply damage to the player
+		UGameplayStatics::ApplyDamage(
+			PlayerPawn,
+			AttackDamage,
+			this,
+			GetPawn(),
+			UDamageType::StaticClass()
+		);
+	}
+	else
+	{
+		// If out of range, stop attacking
+		StopAttacking();
+		return;
+	}
+}
 
