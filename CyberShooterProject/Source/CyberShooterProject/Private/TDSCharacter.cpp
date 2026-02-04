@@ -12,6 +12,7 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "Engine/World.h"
+#include "Engine/Engine.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -60,19 +61,31 @@ void ATDSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Initialize health
+	CurrentHealth = MaxHealth;
+
+	// Bind to take damage event
+	OnTakeAnyDamage.AddDynamic(this, &ATDSCharacter::HandleTakeAnyDamage);
+
+	// Add Input Mapping Context
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
+		// Get the local player subsystem
 		if (ULocalPlayer* LP = PC->GetLocalPlayer())
 		{
+			// Get the Enhanced Input Local Player Subsystem
 			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = LP->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
 			{
+				// Ensure we have a valid mapping context
 				if (DefaultMappingContext)
 					// Add the mapping context
 					Subsystem->AddMappingContext(DefaultMappingContext, 0);
 
 			}
 		}
+		// Show the mouse cursor
 		PC->bShowMouseCursor = true;
+		// Set the default mouse cursor
 		PC->DefaultMouseCursor = EMouseCursor::Crosshairs;
 	}
 
@@ -108,6 +121,7 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		);
 	}
 
+	// Bind the fire action
 	EnhancedInputComponent->BindAction(
 		FireAction,
 		ETriggerEvent::Started,
@@ -115,6 +129,7 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		&ATDSCharacter::StartFiring
 	);
 
+	// Bind the stop fire action
 	EnhancedInputComponent->BindAction(
 		FireAction,
 		ETriggerEvent::Completed,
@@ -194,21 +209,29 @@ void ATDSCharacter::FireOnce()
 
 void ATDSCharacter::FaceMouseCursor()
 {
+	// Get the player controller
 	APlayerController* PC = Cast<APlayerController>(GetController());
+	// Ensure it is valid
 	if (!PC) return;
 
+	// Get the hit result under the cursor
 	FHitResult Hit;
+	// Trace against visibility channel
 	if (!PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit))
 		return;
 
+	// Determine the direction to the hit point
 	FVector ToTarget = Hit.ImpactPoint - GetActorLocation();
 	ToTarget.Z = 0.f; // keep rotation flat
 
+	// If the direction is nearly zero, do nothing
 	if (ToTarget.IsNearlyZero())
 		return;
 
+	// Determine the target rotation
 	FRotator TargetRotation = ToTarget.Rotation();
 
+	// Smoothly interpolate to the target rotation
 	FRotator SmoothedRotation = FMath::RInterpTo(
 		GetActorRotation(),
 		TargetRotation,
@@ -216,5 +239,56 @@ void ATDSCharacter::FaceMouseCursor()
 		RotationSpeed
 	);
 
+	// Set the actor's rotation
 	SetActorRotation(SmoothedRotation);
+}
+
+void ATDSCharacter::HandleTakeAnyDamage(
+	AActor* DamagedActor,
+	float Damage,
+	const UDamageType* DamageType,
+	AController* InstigatedBy,
+	AActor* DamageCauser)
+{
+	// Ignore non-positive damage
+	if (Damage <= 0.f) return;
+
+	// Decrease health and clamp to valid range
+	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
+
+	// Debug: Display current health on screen
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,
+			1.f,
+			FColor::Red,
+			FString::Printf(TEXT("Health: %.1f / %.1f"), CurrentHealth, MaxHealth)
+		);
+	}
+
+	// Check for death
+	if(CurrentHealth <= 0.f)
+	{
+		// Character is dead, disable input
+		DisableInput(Cast<APlayerController>(GetController()));
+
+		// Debug: Print death message
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				5.f,
+				FColor::Yellow,
+				TEXT("Character has died!")
+			);
+		}
+	}
+}
+
+void ATDSCharacter::Heal(float Amount)
+{
+	if (Amount <= 0.f) return; // Ignore non-positive healing
+	// Increase health and clamp to valid range
+	CurrentHealth = FMath::Clamp(CurrentHealth + Amount, 0.f, MaxHealth);
 }

@@ -21,6 +21,16 @@ class ATDSCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	ATDSCharacter();
+	
+	// ---------------- Public Functions ----------------
+
+	// Returns the current health percentage
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	float GetHealthPercent() const { return (MaxHealth > 0.f) ? (CurrentHealth / MaxHealth) : 0.f; }
+
+	// Applies healing to the character, ensuring it does not exceed MaxHealth
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	void Heal(float HealAmount);
 
 protected:
 	// Called when the game starts or when spawned
@@ -35,17 +45,34 @@ protected:
 private:
 	// ---------------- Components ----------------
 
+	// --- Health ---
+
+	// The maximum health of the character
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+	float MaxHealth = 100.f;
+
+	// The current health of the character
+	UPROPERTY(VisibleAnywhere, Category = "Health")
+	float CurrentHealth;
+
 	// --- Camera ---
+
+	// The spring arm that holds the camera
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	USpringArmComponent* SpringArm;
 
+	// The camera component
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	UCameraComponent* Camera;
 
+	// --- Aiming ---
+
+	// How fast the character rotates to face the mouse cursor
 	UPROPERTY(EditDefaultsOnly, Category = "Aiming")
 	float RotationSpeed = 2.f;
 
 	// --- Enhanced Input ---
+
 	// This is the mapping context for the controller
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	UInputMappingContext* DefaultMappingContext;
@@ -59,6 +86,7 @@ private:
 	UInputAction* FireAction;
 
 	// --- Combat ---
+
 	// This allows us to change the projectile when we want to
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
 	TSubclassOf<AActor> ProjectileClass;
@@ -76,13 +104,22 @@ private:
 
 	// ---------------- Functions ----------------
 
+	// Called when the character takes damage
+	UFUNCTION()
+	void HandleTakeAnyDamage(
+		AActor* DamagedActor,
+		float Damage,
+		const class UDamageType* DamageType,
+		class AController* InstigatedBy, 
+		AActor* DamageCauser
+	);
+
 	// Called when the player want's to move
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
 	// Handles the rotation of the character to face the mouse cursor
 	void FaceMouseCursor();
-
 
 	// Handles starting the firing of projectiles
 	void StartFiring();
