@@ -18,6 +18,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 
+#include "TDSHUDWidget.h"
+#include "Blueprint/UserWidget.h"
+
 // Sets default values
 ATDSCharacter::ATDSCharacter()
 {
@@ -87,6 +90,16 @@ void ATDSCharacter::BeginPlay()
 		PC->bShowMouseCursor = true;
 		// Set the default mouse cursor
 		PC->DefaultMouseCursor = EMouseCursor::Crosshairs;
+
+		if (HUDWidgetClass)
+		{
+			HUDWidget = CreateWidget<UTDSHUDWidget>(PC, HUDWidgetClass);
+			if (HUDWidget)
+			{
+				HUDWidget->AddToViewport();
+				HUDWidget->SetPlayer(this);
+			}
+		}
 	}
 
 }

@@ -6,7 +6,7 @@
 #include "GameFramework/Character.h"
 #include "TDSCharacter.generated.h"
 
-
+class UTDSHUDWidget;
 class UCameraComponent;
 class USpringArmComponent;
 class UInputMappingContext;
@@ -44,6 +44,16 @@ protected:
 
 private:
 	// ---------------- Components ----------------
+
+	// --- HUD ---
+
+	// The HUD widget class to use for the player's HUD
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UTDSHUDWidget> HUDWidgetClass;
+
+	// The instance of the HUD widget that is currently being used
+	UPROPERTY()
+	UTDSHUDWidget* HUDWidget = nullptr;
 
 	// --- Health ---
 
