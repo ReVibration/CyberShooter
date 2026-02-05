@@ -6,6 +6,7 @@
 #include "Engine/Engine.h"
 #include "TDSEnemyAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values
 ATDSEnemyCharacter::ATDSEnemyCharacter()
@@ -27,6 +28,17 @@ ATDSEnemyCharacter::ATDSEnemyCharacter()
 
 	// Set rotation rate for smooth turning
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
+
+	// Enable RVO avoidance for better navigation around other characters
+	GetCharacterMovement()->bUseRVOAvoidance = true;
+
+	GetCharacterMovement()->AvoidanceConsiderationRadius = 300.f; // Set the radius for avoidance consideration
+
+	// Set the avoidance weight to prioritize avoiding other characters
+	GetCharacterMovement()->AvoidanceWeight = 0.8f;
+
+	// Set the capsule component to generate overlap events for detecting damage
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
 
 }
 

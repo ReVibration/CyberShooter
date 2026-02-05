@@ -23,7 +23,7 @@ protected:
 	
 	// Distance at which the AI can attack the player
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
-	float AttackRange = 150.f;
+	float AttackRange = 220.f;
 
 	// Damage dealt per attack
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
@@ -39,7 +39,7 @@ protected:
 
 	// Distance at which the AI will stop moving towards the player
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	float StopDistance = 150.0f;
+	float StopDistance = 170.0f;
 
 private:
 
@@ -57,6 +57,10 @@ private:
 	// Reference to the player pawn
 	UPROPERTY()
 	APawn* PlayerPawn = nullptr;
+
+	// Cooldown time for pathfinding updates to prevent excessive calls
+	float RepathCooldown = 0.2f;
+	float TimeSinceLastMove = 0.f;
 
 };
 

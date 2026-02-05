@@ -46,14 +46,21 @@ void ATDSEnemyAIController::Tick(float DeltaSeconds)
 	
 	if (Dist <= ChaseDistance)
 	{
-		// Move towards the player if within chase distance
-		MoveToActor(PlayerPawn, 5.0f);
+		if(TimeSinceLastMove >= RepathCooldown)
+		{
+			// Move towards the player if within chase distance and cooldown has passed
+			MoveToActor(PlayerPawn, StopDistance, true);
+			TimeSinceLastMove = 0.f; // Reset cooldown timer
+		}
 	}
 	else
 	{
 		// Stop moving if outside chase distance
 		StopMovement();
 	}
+
+	// Update time since last move for pathfinding cooldown
+	TimeSinceLastMove += DeltaSeconds;
 }
 
 void ATDSEnemyAIController::StartAttacking()
@@ -62,6 +69,9 @@ void ATDSEnemyAIController::StartAttacking()
 	if (bIsAttacking) return;
 	// Set attacking flag
 	bIsAttacking = true;
+
+	// When we start attacking, we want to ensure the AI is facing the player
+	SetFocus(PlayerPawn);
 
 	// Stop movement to attack
 	StopMovement();
@@ -85,6 +95,9 @@ void ATDSEnemyAIController::StopAttacking()
 	bIsAttacking = false;
 	// Clear the attack timer
 	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
+	
+	// Clear focus to allow movement again
+	ClearFocus(EAIFocusPriority::Gameplay);
 }
 
 void ATDSEnemyAIController::DoMeleeAttack()
