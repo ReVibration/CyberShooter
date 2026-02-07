@@ -21,21 +21,21 @@ ATDSEnemyCharacter::ATDSEnemyCharacter()
 
 
 	// Configure the controlled character to use controller rotation for yaw
-	bUseControllerRotationYaw = true;
+	bUseControllerRotationYaw = false;
 
 	// Ensure the controlled character does not orient rotation to movement
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// Set rotation rate for smooth turning
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 0.0f);
 
 	// Enable RVO avoidance for better navigation around other characters
 	GetCharacterMovement()->bUseRVOAvoidance = true;
 
-	GetCharacterMovement()->AvoidanceConsiderationRadius = 300.f; // Set the radius for avoidance consideration
+	GetCharacterMovement()->AvoidanceConsiderationRadius = 220.f; // Set the radius for avoidance consideration
 
 	// Set the avoidance weight to prioritize avoiding other characters
-	GetCharacterMovement()->AvoidanceWeight = 0.8f;
+	GetCharacterMovement()->AvoidanceWeight = 0.4f;
 
 	// Set the capsule component to generate overlap events for detecting damage
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
