@@ -6,6 +6,14 @@
 #include "AIController.h"
 #include "TDSEnemyAIController.generated.h"
 
+UENUM(BlueprintType)
+enum class EEnemyState : uint8
+{
+	Idle UMETA(DisplayName = "Idle"),
+	Chasing UMETA(DisplayName = "Chasing"),
+	Attacking UMETA(DisplayName = "Attacking")
+};
+
 
 UCLASS()
 class ATDSEnemyAIController : public AAIController
@@ -20,6 +28,36 @@ public:
 	virtual void Tick(float DeltaSeconds) override;
 
 protected:
+
+	// ---- FSM ----
+	EEnemyState State = EEnemyState::Idle;
+
+	void SetState(EEnemyState NewState);
+	void UpdateStateTransitions();
+	void RunState(float DeltaSeconds);
+
+	// ---- Idle State ----
+
+	// Parameters for wandering behavior when in idle state
+	UPROPERTY(EditDefaultsOnly, Category = "AI|Idle")
+	float WanderRadius = 900.f;
+
+	// Time interval for recalculating wander target to prevent excessive pathfinding calls
+	UPROPERTY(EditDefaultsOnly, Category = "AI|Idle")
+	float WanderRepathCooldown = 0.5f;
+
+	// Minimum and maximum time the AI will pause before moving to a new wander target, used to create more natural idle behavior
+	UPROPERTY(EditDefaultsOnly, Category = "AI|Idle")
+	float WanderPauseMin = 0.5f;
+
+	// Maximum time the AI will pause before moving to a new wander target, used to create more natural idle behavior
+	UPROPERTY(EditDefaultsOnly, Category = "AI|Idle")
+	float WanderPauseMax = 1.5f;
+
+	// Timer handle for managing wander target updates
+	FTimerHandle WanderTimerHandle;
+	FVector WanderTarget = FVector::ZeroVector;
+	bool bHasWanderTarget = false;
 
 	// Variables for stuck detection
 	FVector LastLocation = FVector::ZeroVector;
@@ -86,6 +124,10 @@ protected:
 
 private:
 
+	// Wander helpers
+	void PickNewWanderTarget();
+	void StartWanderAfterDelay();
+
 	// Function to handle stuck detection and recovery
 	void HandleStuck(float DeltaSeconds);
 	void Unstick();
@@ -117,6 +159,11 @@ private:
 	// Cooldown time for pathfinding updates to prevent excessive calls
 	float RepathCooldown = 0.2f;
 	float TimeSinceLastMove = 0.f;
+
+	float TimeSinceLastWanderMove = 0.f;
+	void SetOrientRotationToMovement(bool bEnable);
+
+	FVector2D SlotJitterOffset = FVector2D::ZeroVector;
 
 };
 

@@ -2,11 +2,12 @@
 
 
 #include "TDSEnemyAIController.h"
-#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "GameFramework/Character.h"
-#include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
+#include "TimerManager.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/DamageType.h"
 
 void ATDSEnemyAIController::OnPossess(APawn* InPawn)
 {
@@ -16,19 +17,17 @@ void ATDSEnemyAIController::OnPossess(APawn* InPawn)
 	// Get reference to the player pawn
 	PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
 
-	// Start the timer to update the combat slot target position around the player
-	GetWorldTimerManager().SetTimer(
-		SlotTimerHandle,
-		this,
-		&ATDSEnemyAIController::UpdateSlotTarget,
-		slotRecalcInterval,
-		true
+	// Randomize initial slot angle for this AI to ensure they start in different positions around the player
+	SlotAngleRad = FMath::FRandRange(0.f, 2 * PI);
+	bSlotAngleInit = true;
+
+	SetState(EEnemyState::Idle); // Start in idle state
+
+	SlotJitterOffset = FVector2D(
+		FMath::FRandRange(-slotJitter, slotJitter),
+		FMath::FRandRange(-slotJitter, slotJitter)
 	);
 
-	UpdateSlotTarget(); // Initial call to set the slot target immediately
-
-	SlotAngleRad = FMath::FRandRange(0.f, 2 * PI); // Start at a random angle to spread out multiple enemies
-	bSlotAngleInit = true; // Mark that we've initialized the slot angle
 }
 
 void ATDSEnemyAIController::Tick(float DeltaSeconds)
@@ -36,65 +35,249 @@ void ATDSEnemyAIController::Tick(float DeltaSeconds)
 	// Call the base class Tick
 	Super::Tick(DeltaSeconds);
 
-	// Ensure we have valid references
-	if (!PlayerPawn || !GetPawn()) 
+	// If we don't have a pawn, do nothing
+	if (!GetPawn()) return; 
+
+	if (!PlayerPawn)
 	{
-		// Try to get the player pawn if not already set
-		PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-		if (!PlayerPawn) return; 
+		// Try to get the player pawn again if we don't have it
+		PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0); 
 	}
 
+	// Check if we need to change states based on distance to player
+	UpdateStateTransitions(); 
+	
+	// Execute behavior based on current state
+	RunState(DeltaSeconds);
+
+	// Check if we're stuck and try to unstick if necessary
+	HandleStuck(DeltaSeconds); 
+}
+
+void ATDSEnemyAIController::UpdateStateTransitions()
+{
+	// Ensure we have valid references
+	if (!PlayerPawn || !GetPawn()) return;
 
 	// Calculate distance to player
-	const float Dist = FVector::Dist(PlayerPawn->GetActorLocation(), GetPawn()->GetActorLocation());
-	
+	const float Dist = FVector::Dist2D(PlayerPawn->GetActorLocation(), GetPawn()->GetActorLocation());
 
-	// Smoothly interpolate towards the slot target for more natural movement
-	SmoothedSlotTarget = FMath::VInterpTo(SmoothedSlotTarget, CurrentSlotTarget, DeltaSeconds, SlotSmoothingSpeed);
-	// Calculate distance to current slot target smoothed
-	const float SlotDist = FVector::Dist(SmoothedSlotTarget, GetPawn()->GetActorLocation());
-
-
-	if (Dist <= ChaseDistance)
+	switch (State) 
 	{
-		RotatePawnTowardPlayer(DeltaSeconds); // Focus on the player when within chase distance
-		if(Dist <= AttackRange)
+		// In Idle state, if the player comes within chase distance, switch to Chasing
+		case EEnemyState::Idle:
 		{
-			SetFocus(PlayerPawn); // Set focus to the player when within attack range
-			StartAttacking(); // Start attacking if within attack range
-			return; // No need to move if we're attacking
-		}
-
-		StopAttacking(); // Stop attacking if we're not within attack range
-
-		if (SlotDist > StopDistance)
-		{
-			// Move towards the current slot target if we're not close enough and cooldown has passed
-			TimeSinceLastMove += DeltaSeconds;
-			if (TimeSinceLastMove >= RepathCooldown)
+			if (Dist <= ChaseDistance)
 			{
-
-
-				MoveToLocation(SmoothedSlotTarget, StopDistance, true);
-				TimeSinceLastMove = 0.f; // Reset cooldown timer
+				SetState(EEnemyState::Chasing);
 			}
+			break;
 		}
-		else
+		// In Chasing state, if we get within attack range, switch to Attacking. If the player gets too far away, switch back to Idle
+		case EEnemyState::Chasing:
 		{
-			StopMovement(); // Stop moving if we're close enough to the slot target
+			if (Dist <= AttackRange)
+			{
+				SetState(EEnemyState::Attacking);
+			}
+			else if (Dist > ChaseDistance)
+			{
+				SetState(EEnemyState::Idle);
+			}
+			break;
+		}
+
+		// In Attacking state, if the player moves out of attack range but is still within chase distance, switch back to Chasing. If the player moves out of chase distance, switch back to Idle
+		case EEnemyState::Attacking:
+		{
+			if (Dist > AttackRange)
+			{
+				SetState(EEnemyState::Chasing);
+			}
+			else if (Dist > ChaseDistance)
+			{
+				SetState(EEnemyState::Idle);
+			}
+			break;
 		}
 	}
-	else
+}
+
+void ATDSEnemyAIController::SetState(EEnemyState NewState)
+{
+	// If we're already in the desired state, do nothing
+	if (State == NewState) return; 
+
+	switch (State)
 	{
-		StopAttacking(); // Stop attacking if we're out of chase distance
-		StopMovement(); // Stop moving if we're out of chase distance
-		ClearFocus(EAIFocusPriority::Gameplay); // Clear focus if we're out of chase distance
+		case EEnemyState::Attacking:
+		{
+			SetOrientRotationToMovement(false);
+			// Clean up attacking state when leaving it
+			StopAttacking();
+			break;
+		default:
+			break;
+		}
 	}
 
-	// Handle stuck detection and recovery
-	HandleStuck(DeltaSeconds);
+	// Update to the new state
+	State = NewState;
+
+	switch (State)
+	{
+		case EEnemyState::Idle:
+		{
+			// Clear focus to allow wandering
+			ClearFocus(EAIFocusPriority::Gameplay);
+			SetOrientRotationToMovement(true);
+			// Stop any movement when entering idle
+			StopMovement();
+
+			// Clear any existing slot timers
+			GetWorldTimerManager().ClearTimer(SlotTimerHandle);
+
+			PickNewWanderTarget(); // immediate first target
+			break;
+		}
+		case EEnemyState::Chasing:
+		{
+			SetOrientRotationToMovement(false);
+			// Ensure we're not attacking when we start chasing
+			StopAttacking();
+			// Clear wander target so we can start chasing immediately
+			bHasWanderTarget = false;
+			// Clear any existing wander timers
+			GetWorldTimerManager().ClearTimer(WanderTimerHandle);
+
+			// Update the target slot around the player immediately when we start chasing
+			UpdateSlotTarget();
+
+			// Set timer to update the target slot around the player at regular intervals while chasing
+			GetWorldTimerManager().SetTimer(
+				SlotTimerHandle,
+				this,
+				&ATDSEnemyAIController::UpdateSlotTarget,
+				slotRecalcInterval,
+				true
+			);
+			break;
+		}
+		case EEnemyState::Attacking:
+		{
+			// Start the attacking behavior and ensure we stop moving when we start attacking
+			StopMovement();
+			StartAttacking();
+			break;
+		}
+	}
 
 }
+
+void ATDSEnemyAIController::RunState(float DeltaSeconds)
+{
+	// Ensure we have a valid pawn reference
+	if (!GetPawn()) return;
+
+	switch (State)
+	{
+		case EEnemyState::Idle:
+		{
+			// If we don't have a wander target, the timer will handle it.
+			if (!bHasWanderTarget) return;
+
+			const float DistToTarget = FVector::Dist2D(WanderTarget, GetPawn()->GetActorLocation());
+			if (DistToTarget <= 120.f)
+			{
+				bHasWanderTarget = false; // Clear the target so we pick a new one after a delay
+				StopMovement(); // Stop movement when we reach the wander target
+				StartWanderAfterDelay(); // Start a new wander after a short delay to create more natural idle behavior
+				return;
+			}
+
+			// Update timer for the last move
+			TimeSinceLastWanderMove += DeltaSeconds;
+			if (TimeSinceLastWanderMove >= WanderRepathCooldown)
+			{
+				// If we've been moving towards the wander target for a while, pick a new one to prevent getting stuck trying to reach an unreachable point
+				MoveToLocation(WanderTarget, 80.f, true);
+				TimeSinceLastWanderMove = 0.f;
+			}
+			break;
+		}
+
+		case EEnemyState::Chasing:
+		{
+			// Face player while chasing (your smooth rotation)
+			RotatePawnTowardPlayer(DeltaSeconds);
+
+			// Smooth slot targetting to help with rotation and make movement look more natural instead of robotic snapping to the slot position
+			SmoothedSlotTarget = FMath::VInterpTo(SmoothedSlotTarget, CurrentSlotTarget, DeltaSeconds, SlotSmoothingSpeed);
+			const float SlotDist = FVector::Dist2D(SmoothedSlotTarget, GetPawn()->GetActorLocation());
+
+			// Only move towards the slot if we're not close enough to it, and use a cooldown to prevent excessive pathfinding calls which can cause performance issues
+			if (SlotDist > StopDistance)
+			{
+				TimeSinceLastMove += DeltaSeconds;
+				if (TimeSinceLastMove >= RepathCooldown)
+				{
+					MoveToLocation(SmoothedSlotTarget, StopDistance, true);
+					TimeSinceLastMove = 0.f;
+				}
+			}
+			else
+			{
+				StopMovement(); // Stop movement if we're close enough to the slot to prevent jittery movement
+			}
+			break;
+		}
+
+		case EEnemyState::Attacking:
+		{
+			// Attacking is handles by the timer so just keep facing the player to ensure we look in the right direction while attacking
+			RotatePawnTowardPlayer(DeltaSeconds);
+			// Ensure we stay still while attacking, in case we got here from chasing and were still moving. We want to be stationary while attacking.
+			StopMovement();
+			break;
+		}
+	}
+}
+
+void ATDSEnemyAIController::StartWanderAfterDelay()
+{
+	// Randomize the delay before picking a new wander target to create more natural idle behavior, so the AI doesn't always pause for the same amount of time before moving again
+	const float Delay = FMath::FRandRange(WanderPauseMin, WanderPauseMax);
+
+	// Set a timer to pick a new wander target after the randomized delay
+	GetWorldTimerManager().SetTimer(
+		WanderTimerHandle,
+		this,
+		&ATDSEnemyAIController::PickNewWanderTarget,
+		Delay,
+		false
+	);
+}
+
+void ATDSEnemyAIController::PickNewWanderTarget()
+{
+	// Ensure we have a valid pawn reference before trying to pick a wander target
+	if (!GetPawn()) return;
+
+	// Get a random reachable point within WanderRadius of the AI's current location to use as the new wander target. This uses the navigation system to ensure the point is actually reachable, which helps prevent the AI from getting stuck trying to reach an unreachable location.
+	const FVector Origin = GetPawn()->GetActorLocation();
+
+	FNavLocation Result;
+	if (UNavigationSystemV1* Nav = UNavigationSystemV1::GetCurrent(GetWorld()))
+	{
+		if (Nav->GetRandomReachablePointInRadius(Origin, WanderRadius, Result))
+		{
+			WanderTarget = Result.Location;
+			bHasWanderTarget = true;
+			TimeSinceLastMove = WanderRepathCooldown; // force move immediately
+		}
+	}
+}
+
 
 void ATDSEnemyAIController::StartAttacking()
 {
@@ -102,9 +285,6 @@ void ATDSEnemyAIController::StartAttacking()
 	if (bIsAttacking) return;
 	// Set attacking flag
 	bIsAttacking = true;
-
-	// When we start attacking, we want to ensure the AI is facing the player
-	SetFocus(PlayerPawn);
 
 	// Stop movement to attack
 	StopMovement();
@@ -139,7 +319,7 @@ void ATDSEnemyAIController::DoMeleeAttack()
 	if (!PlayerPawn || !GetPawn()) return;
 
 	// Calculate distance to player
-	const float Dist = FVector::Dist(PlayerPawn->GetActorLocation(), GetPawn()->GetActorLocation());
+	const float Dist = FVector::Dist2D(PlayerPawn->GetActorLocation(), GetPawn()->GetActorLocation());
 
 	// If within attack range, apply damage
 	if (Dist <= AttackRange)
@@ -190,8 +370,8 @@ FVector ATDSEnemyAIController::ComputeSlotTarget() const
 	);
 
 	// Add a little noise so it doesn't look robotic
-	Offset.X += FMath::FRandRange(-slotJitter, slotJitter);
-	Offset.Y += FMath::FRandRange(-slotJitter, slotJitter);
+	Offset.X += SlotJitterOffset.X;
+	Offset.Y += SlotJitterOffset.Y;
 
 	// Calculate the desired position by adding the offset to the player's location
 	FVector Desired = PlayerLoc + Offset;
@@ -269,6 +449,14 @@ void ATDSEnemyAIController::RotatePawnTowardPlayer(float DeltaSeconds)
 
 void ATDSEnemyAIController::HandleStuck(float DeltaSeconds)
 {
+	// If we're idle or attacking, we don't consider ourselves stuck and just reset the timer and last location. Stuck detection is only relevant while we're trying to move towards a target (chasing), so we can ignore it in other states.
+	if (State == EEnemyState::Idle || bIsAttacking)
+	{
+		StuckTime = 0.f;
+		LastLocation = GetPawn()->GetActorLocation();
+		return;
+	}
+
 	// Ensure we have a valid pawn reference
 	APawn* P = GetPawn();
 	if (!P) return;
@@ -326,3 +514,25 @@ void ATDSEnemyAIController::Unstick()
 	StopMovement();
 	TimeSinceLastMove = RepathCooldown; // force a repath immediately next tick
 }
+
+void ATDSEnemyAIController::SetOrientRotationToMovement(bool bEnable)
+{
+	// Get the pawn
+	if (APawn* P = GetPawn())
+	{
+		//If it's a character
+		if (ACharacter* C = Cast<ACharacter>(P))
+		{
+			// Enable or disable orienting rotation to movement on the character's movement component, and adjust controller rotation settings accordingly
+			if (UCharacterMovementComponent* Move = C->GetCharacterMovement())
+			{
+				Move->bOrientRotationToMovement = bEnable;
+				C->bUseControllerRotationYaw = false;
+
+				// rotation speed when orienting to movement
+				Move->RotationRate = FRotator(0.f, 720.f, 0.f);
+			}
+		}
+	}
+}
+
