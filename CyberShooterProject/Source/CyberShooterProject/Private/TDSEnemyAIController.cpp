@@ -8,6 +8,8 @@
 #include "TimerManager.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/DamageType.h"
+#include "GameFramework/Character.h"
+
 
 void ATDSEnemyAIController::OnPossess(APawn* InPawn)
 {
