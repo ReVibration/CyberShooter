@@ -3,6 +3,9 @@
 
 #include "TDSCharacter.h"
 
+#include "TDSGameMode.h"
+#include "TDSPlayerController.h"
+
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -84,20 +87,6 @@ void ATDSCharacter::BeginPlay()
 					// Add the mapping context
 					Subsystem->AddMappingContext(DefaultMappingContext, 0);
 
-			}
-		}
-		// Show the mouse cursor
-		PC->bShowMouseCursor = true;
-		// Set the default mouse cursor
-		PC->DefaultMouseCursor = EMouseCursor::Crosshairs;
-
-		if (HUDWidgetClass)
-		{
-			HUDWidget = CreateWidget<UTDSHUDWidget>(PC, HUDWidgetClass);
-			if (HUDWidget)
-			{
-				HUDWidget->AddToViewport();
-				HUDWidget->SetPlayer(this);
 			}
 		}
 	}
@@ -269,33 +258,16 @@ void ATDSCharacter::HandleTakeAnyDamage(
 	// Decrease health and clamp to valid range
 	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
 
-	// Debug: Display current health on screen
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			1.f,
-			FColor::Red,
-			FString::Printf(TEXT("Health: %.1f / %.1f"), CurrentHealth, MaxHealth)
-		);
-	}
-
 	// Check for death
 	if(CurrentHealth <= 0.f)
 	{
-		// Character is dead, disable input
-		DisableInput(Cast<APlayerController>(GetController()));
+		ATDSGameMode* GM = Cast<ATDSGameMode>(GetWorld()->GetAuthGameMode());
 
-		// Debug: Print death message
-		if (GEngine)
+		if (GM)
 		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				5.f,
-				FColor::Yellow,
-				TEXT("Character has died!")
-			);
+			GM->HandleGameOver(GetController());
 		}
+		
 	}
 }
 

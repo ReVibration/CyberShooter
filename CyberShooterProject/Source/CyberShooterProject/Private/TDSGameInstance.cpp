@@ -6,7 +6,7 @@
 
 void UTDSGameInstance::LoadMainMenu()
 {
-	UGameplayStatics::OpenLevel(this, FName("MainMenu"));
+	UGameplayStatics::OpenLevel(this, FName("MainMenuLevel"));
 }
 
 void UTDSGameInstance::StartNewRun() 

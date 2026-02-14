@@ -18,5 +18,9 @@ public:
 
 	// Sets default values for this game mode's properties
 	ATDSGameMode();
+
+	// Handle the game over if the player has died
+	UFUNCTION()
+	void HandleGameOver(AController* DeadController);
 	
 };

@@ -2,7 +2,10 @@
 
 
 #include "TDSPlayerController.h"
+#include "TDSHUDWidget.h"
+#include "TDSCharacter.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
 
 void ATDSPlayerController::BeginPlay()
 {
@@ -15,35 +18,146 @@ void ATDSPlayerController::BeginPlay()
 	//If we're in the main menu level, show the main menu UI
 	if (LevelName.Contains("MainMenulevel"))
 	{
+		// When inside the main menu show the main menu and set the input mode
 		ShowMainMenu();
-		// Enable the mouse cursor for interaction
-		bShowMouseCursor = true;
-		//Set the input mode to UI only, so the player can interact with the menu without affecting the game world
-		SetInputMode(FInputModeUIOnly());
-	};
+		SetMenuInputMode();
+	}
+	else
+	{
+		// When outside of the main menu show the HUD and set the input mode
+		ShowHUD();
+		SetGameInputMode();
+	}
+}
+
+void ATDSPlayerController::ClearAllUI() 
+{
+	// If there is a child instance of the UI then you can remove from the parent
+	if (ActiveMainMenu) { ActiveMainMenu->RemoveFromParent(); ActiveMainMenu = nullptr; }
+	if (ActiveHUD) { ActiveHUD->RemoveFromParent();      ActiveHUD = nullptr; }
+	if (ActiveGameOver) { ActiveGameOver->RemoveFromParent(); ActiveGameOver = nullptr; }
 }
 
 void ATDSPlayerController::ShowMainMenu()
 {
-	// Check if the MainMenuClass is set, and if so, create the widget and add it to the viewport to display the main menu UI
-	if (MainMenuClass)
+	// Make sure you have a valid reference
+	if (!MainMenuClass) return;
+
+	// Get the main active main menu widget
+	ActiveMainMenu = CreateWidget<UUserWidget>(this, MainMenuClass);
+	if (ActiveMainMenu)
 	{
-		UUserWidget* Menu = CreateWidget(this, MainMenuClass);
-		Menu->AddToViewport();
+		// If it is found then add it to the view port
+		ActiveMainMenu->AddToViewport(0);
+	}
+
+}
+
+void ATDSPlayerController::ShowHUD()
+{
+	if (!HUDClass) return;
+
+	if (!ActiveHUD)
+	{
+		ActiveHUD = CreateWidget<UTDSHUDWidget>(this, HUDClass);
+		if (ActiveHUD)
+		{
+			ActiveHUD->AddToViewport(0);
+		}
+	}
+
+	if (ActiveHUD)
+	{
+		if (ATDSCharacter* TDS = Cast<ATDSCharacter>(GetPawn()))
+		{
+			ActiveHUD->SetPlayer(TDS);
+		}
 	}
 }
 
+
 void ATDSPlayerController::ShowGameOver()
 {
-	//Check if the GameOverClass is set, and
-	if (GameOverClass)
-	{
-		//Create the game over widget and add it to the viewport to display the game over UI
-		UUserWidget* GameOver = CreateWidget(this, GameOverClass);
-		GameOver->AddToViewport();
+	// Remove HUD so it doesn't overlap/capture focus
+	HideHUD();
 
-		//Enable the mouse cursor for interaction with the game over screen
-		bShowMouseCursor = true; 
-		SetInputMode(FInputModeUIOnly());
+	// Make sure that you have valid reference
+	if (!GameOverClass) return;
+
+	// Get the game over class
+	ActiveGameOver = CreateWidget<UUserWidget>(this, GameOverClass);
+	if (ActiveGameOver)
+	{
+		// If it is found then add it to the view port in a higher order
+		ActiveGameOver->AddToViewport(200); // high Z-order
+	}
+
+	// Set the game over input mode
+	SetGameOverInputMode();
+
+	// Hard stop input (prevents spinning / moving)
+	SetIgnoreMoveInput(true);
+	SetIgnoreLookInput(true);
+
+	// Optional pause (UI still works)
+	SetPause(true);
+}
+
+
+void ATDSPlayerController::SetGameInputMode()
+{
+	// Set the correct mouse functions
+	bShowMouseCursor = false;
+	bEnableClickEvents = false;
+	bEnableMouseOverEvents = false;
+	 
+	// Make sure that previous modes are disabled
+	SetIgnoreMoveInput(false);
+	SetIgnoreLookInput(false);
+
+	FInputModeGameOnly Mode;
+	SetInputMode(Mode);
+	// Unpause the game 
+	SetPause(false);
+}
+
+void ATDSPlayerController::SetMenuInputMode()
+{
+	// Set the correct mouse functions
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+
+	FInputModeUIOnly Mode;
+	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(Mode);
+
+	// Menu should not control the pawn
+	SetIgnoreMoveInput(true);
+	SetIgnoreLookInput(true);
+
+	SetPause(false);
+}
+
+void ATDSPlayerController::SetGameOverInputMode()
+{
+	// Set the correct mouse functions
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+
+	FInputModeUIOnly Mode;
+	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(Mode);
+}
+
+
+void ATDSPlayerController::HideHUD()
+{
+	// The HUD widget exists you need to hide it
+	if (ActiveHUD)
+	{
+		ActiveHUD->RemoveFromParent();
+		ActiveHUD = nullptr;
 	}
 }
