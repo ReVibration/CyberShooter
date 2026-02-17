@@ -7,11 +7,12 @@
 #include "TDSPlayerController.h"
 
 #include "Camera/CameraComponent.h"
-#include "GameFramework/SpringArmComponent.h"
+#include "TDSSpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 #include "Engine/World.h"
@@ -36,21 +37,42 @@ ATDSCharacter::ATDSCharacter()
 	bUseControllerRotationRoll = false;
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
-	// Create the camera boom (spring arm)
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->TargetArmLength = 900.0f;
-	SpringArm->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
-	SpringArm->bDoCollisionTest = false;
+	// Create the minimum safety distance sphere
+	CameraMinDistanceSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CameraMinDistanceSphere"));
+	CameraMinDistanceSphere->SetupAttachment(GetRootComponent());
 
-	SpringArm->bUsePawnControlRotation = false;
-	SpringArm->bInheritPitch = false;
-	SpringArm->bInheritYaw = false;
-	SpringArm->bInheritRoll = false;
+	// Size = how close the camera is allowed to get.
+	// Start around 80–120 and tune.
+	CameraMinDistanceSphere->SetSphereRadius(100.f);
+
+	// Only used for camera probing
+	CameraMinDistanceSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	CameraMinDistanceSphere->SetCollisionObjectType(ECC_WorldDynamic);
+
+	// Ignore everything except the camera probe
+	CameraMinDistanceSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+	CameraMinDistanceSphere->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+
+	// Create the camera boom (spring arm)
+	CameraBoom = CreateDefaultSubobject<UTDSSpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+
+	CameraBoom->TargetArmLength = 900.f;
+	CameraBoom->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
+
+	// Allow to colide with walls
+	CameraBoom->bDoCollisionTest = true;
+	CameraBoom->ProbeChannel = ECC_Camera;
+	CameraBoom->ProbeSize = 16.f;
+
+	CameraBoom->bUsePawnControlRotation = false;
+	CameraBoom->bInheritPitch = false;
+	CameraBoom->bInheritYaw = false;
+	CameraBoom->bInheritRoll = false;
 
 	// Create the camera
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(SpringArm);
+	Camera->SetupAttachment(CameraBoom);
 	Camera->bUsePawnControlRotation = false;
 
 	// Create the muzzle location
@@ -58,7 +80,8 @@ ATDSCharacter::ATDSCharacter()
 		: GetActorLocation() + GetActorForwardVector() * 80.f;
 	const FRotator SpawnRotation = GetActorRotation();
 
-
+	// ===== Prevent mesh from blocking camera =====
+	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
 }
 
@@ -216,33 +239,19 @@ void ATDSCharacter::FaceMouseCursor()
 	// Ensure it is valid
 	if (!PC) return;
 
-	// Get the hit result under the cursor
-	FHitResult Hit;
-	// Trace against visibility channel
-	if (!PC->GetHitResultUnderCursor(ECC_Visibility, false, Hit))
-		return;
 
-	// Determine the direction to the hit point
-	FVector ToTarget = Hit.ImpactPoint - GetActorLocation();
-	ToTarget.Z = 0.f; // keep rotation flat
+	FVector AimPoint;
+	if (GetMouseAimPointOnPlayerPlane(*PC, AimPoint))
+	{
+		FVector ToAim = AimPoint - GetActorLocation();
+		ToAim.Z = 0.f;
 
-	// If the direction is nearly zero, do nothing
-	if (ToTarget.IsNearlyZero())
-		return;
-
-	// Determine the target rotation
-	FRotator TargetRotation = ToTarget.Rotation();
-
-	// Smoothly interpolate to the target rotation
-	FRotator SmoothedRotation = FMath::RInterpTo(
-		GetActorRotation(),
-		TargetRotation,
-		GetWorld()->GetDeltaSeconds(),
-		RotationSpeed
-	);
-
-	// Set the actor's rotation
-	SetActorRotation(SmoothedRotation);
+		if (!ToAim.IsNearlyZero())
+		{
+			const float Yaw = ToAim.Rotation().Yaw;
+			SetActorRotation(FRotator(0.f, Yaw, 0.f));
+		}
+	}
 }
 
 void ATDSCharacter::HandleTakeAnyDamage(
@@ -276,4 +285,34 @@ void ATDSCharacter::Heal(float Amount)
 	if (Amount <= 0.f) return; // Ignore non-positive healing
 	// Increase health and clamp to valid range
 	CurrentHealth = FMath::Clamp(CurrentHealth + Amount, 0.f, MaxHealth);
+}
+
+bool ATDSCharacter::GetMouseAimPointOnPlayerPlane(APlayerController& PC, FVector& OutAimPoint) const
+{
+	// Get the ray direction and orgin
+	FVector RayOrigin, RayDir;
+	if (!PC.DeprojectMousePositionToWorld(RayOrigin, RayDir))
+	{
+		return false;
+	}
+
+	// Plane at the player's current Z
+	const FVector PlanePoint = GetActorLocation();
+	const FVector PlaneNormal = FVector::UpVector;
+
+	// Denomise the product and if it's nearly zero do nothing
+	const float Denom = FVector::DotProduct(RayDir, PlaneNormal);
+	if (FMath::IsNearlyZero(Denom))
+	{
+		return false;
+	}
+
+	const float T = FVector::DotProduct((PlanePoint - RayOrigin), PlaneNormal) / Denom;
+	if (T < 0.f)
+	{
+		return false;
+	}
+
+	OutAimPoint = RayOrigin + RayDir * T;
+	return true;
 }

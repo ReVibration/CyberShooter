@@ -107,7 +107,7 @@ void ATDSPlayerController::ShowGameOver()
 void ATDSPlayerController::SetGameInputMode()
 {
 	// Set the correct mouse functions
-	bShowMouseCursor = false;
+	bShowMouseCursor = true;
 	bEnableClickEvents = false;
 	bEnableMouseOverEvents = false;
 	 

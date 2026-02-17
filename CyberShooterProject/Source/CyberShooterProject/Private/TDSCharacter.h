@@ -68,12 +68,16 @@ private:
 	// --- Camera ---
 
 	// The spring arm that holds the camera
-	UPROPERTY(VisibleAnywhere, Category = "Camera")
-	USpringArmComponent* SpringArm;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+	class UTDSSpringArmComponent* CameraBoom;
 
 	// The camera component
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	UCameraComponent* Camera;
+
+	// The sphere to use to make sure we are not clipping into the character
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta=(AllowPrivateAccess="true"))
+	class USphereComponent* CameraMinDistanceSphere;
 
 	// --- Aiming ---
 
@@ -139,4 +143,7 @@ private:
 
 	// Handles firing a single projectile
 	void FireOnce();
+
+	// This will get the mouse aim point on the player to make sure that walls are not affecting rotation
+	bool GetMouseAimPointOnPlayerPlane(APlayerController& PC, FVector& OutAimPoint) const;
 };
