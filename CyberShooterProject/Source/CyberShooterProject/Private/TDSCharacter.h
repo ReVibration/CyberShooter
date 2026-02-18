@@ -110,7 +110,8 @@ private:
 
 	// A property that can change the fire rate 
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
-	float FireRate = 0.12f;
+	float FireInterval = 0.25f;
+
 	// Timer handle to manage the firing rate
 	FTimerHandle FireTimerHandle;
 	// Whether the player is currently firing

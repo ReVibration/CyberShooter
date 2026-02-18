@@ -3,6 +3,8 @@
 
 #include "TDSCharacter.h"
 
+#include "InputCoreTypes.h"
+
 #include "TDSGameMode.h"
 #include "TDSPlayerController.h"
 
@@ -146,21 +148,10 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		);
 	}
 
-	// Bind the fire action
-	EnhancedInputComponent->BindAction(
-		FireAction,
-		ETriggerEvent::Started,
-		this,
-		&ATDSCharacter::StartFiring
-	);
-
-	// Bind the stop fire action
-	EnhancedInputComponent->BindAction(
-		FireAction,
-		ETriggerEvent::Completed,
-		this,
-		&ATDSCharacter::StopFiring
-	);
+	// Bind firing actions
+	EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ATDSCharacter::StartFiring);
+	EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ATDSCharacter::StopFiring);
+	EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Canceled, this, &ATDSCharacter::StopFiring);
 
 }
 
@@ -183,28 +174,39 @@ void ATDSCharacter::Move(const FInputActionValue& Value)
 // Handles starting the firing of projectiles
 void ATDSCharacter::StartFiring()
 {
-	//  Avoid starting if already firing
-	if (bIsFiring) return;
-	// Set the firing flag
+	UE_LOG(LogTemp, Warning, TEXT("StartFiring()  bIsFiring=%d  TimerActive=%d"),
+		bIsFiring,
+		GetWorldTimerManager().IsTimerActive(FireTimerHandle));
+
+	// If our flag says "firing" but the timer isn't active, we got desynced.
+	// Re-sync so we don't require a second click.
+	if (bIsFiring && !GetWorldTimerManager().IsTimerActive(FireTimerHandle))
+	{
+		bIsFiring = false;
+	}
+
+	if (bIsFiring)
+		return;
+
 	bIsFiring = true;
 
-	FireOnce(); // shoot immediately
+	// Fire immediately
+	FireOnce();
 
-	// then keep firing repeatedly
+	// Then start looping
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
 	GetWorldTimerManager().SetTimer(
 		FireTimerHandle,
 		this,
 		&ATDSCharacter::FireOnce,
-		FireRate,
+		FireInterval,
 		true
 	);
 }
 
 void ATDSCharacter::StopFiring()
 {
-	// If not firing, do nothing
 	bIsFiring = false;
-	// Clear the timer
 	GetWorldTimerManager().ClearTimer(FireTimerHandle);
 }
 

@@ -116,7 +116,12 @@ void ATDSPlayerController::SetGameInputMode()
 	SetIgnoreLookInput(false);
 
 	FInputModeGameOnly Mode;
+
+	// Don't eat the first mouse-down when capturing focus
+	Mode.SetConsumeCaptureMouseDown(false);
+
 	SetInputMode(Mode);
+
 	// Unpause the game 
 	SetPause(false);
 }
@@ -141,14 +146,25 @@ void ATDSPlayerController::SetMenuInputMode()
 
 void ATDSPlayerController::SetGameOverInputMode()
 {
-	// Set the correct mouse functions
 	bShowMouseCursor = true;
-	bEnableClickEvents = true;
-	bEnableMouseOverEvents = true;
 
-	FInputModeUIOnly Mode;
+	// We don't want click events for gameplay
+	bEnableClickEvents = false;
+	bEnableMouseOverEvents = false;
+
+	SetIgnoreMoveInput(false);
+	SetIgnoreLookInput(false);
+
+	FInputModeGameAndUI Mode;
+	Mode.SetHideCursorDuringCapture(false);
 	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+	// Important: focus the viewport so first click is not “just focus”
+	Mode.SetWidgetToFocus(nullptr);
+
 	SetInputMode(Mode);
+
+	SetPause(false);
 }
 
 
