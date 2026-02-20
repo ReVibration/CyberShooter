@@ -33,3 +33,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Environment Packs
+/CyberShooterProject/Content/CyberpunkIndustries
+/CyberShooterProject/Content/LowerSector_Mod
+/CyberShooterProject/Content/UndergroundSciFi
