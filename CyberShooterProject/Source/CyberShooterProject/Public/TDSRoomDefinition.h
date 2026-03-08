@@ -16,7 +16,7 @@ enum class ETDSRoomType : uint8
 };
 
 UCLASS(BlueprintType)
-class CYBERSHOOTERPROJECT_API UTDSRoomDefinition : public UDataAsset
+class UTDSRoomDefinition : public UDataAsset
 {
 	GENERATED_BODY()
 	
