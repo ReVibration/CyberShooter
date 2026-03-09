@@ -93,6 +93,7 @@ void ATDSEnemyCharacter::HandleTakeAnyDamage(
 	// Check for death
 	if (CurrentHealth <= 0.f)
 	{
+		OnEnemyDied.Broadcast(this);
 		// Handle enemy death (e.g., play animation, destroy actor, etc.)
 		Destroy();
 	}

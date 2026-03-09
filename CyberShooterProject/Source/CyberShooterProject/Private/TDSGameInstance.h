@@ -41,5 +41,9 @@ public:
 	// Function to get the next room definition based on the current room index and the type of room that should be generated. 
 	UFUNCTION(BlueprintCallable, Category = "Run")
 	UTDSRoomDefinition* GetNextRoomDefinition();
+
+	// Function to load the next room based on the current room index and the type of room that should be generated.
+	UFUNCTION(BlueprintCallable, Category = "Run")
+	void LoadNextRoom();
 	
 };

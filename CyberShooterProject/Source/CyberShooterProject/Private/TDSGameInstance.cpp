@@ -50,3 +50,24 @@ UTDSRoomDefinition* UTDSGameInstance::GetNextRoomDefinition()
     const int32 CombatIndex = FMath::RandRange(0, CombatRooms.Num() - 1);
     return CombatRooms[CombatIndex];
 }
+
+// This function loads the next room based on the current room index and the type of room that should be generated.
+void UTDSGameInstance::LoadNextRoom()
+{
+	// Get the next room definition using the GetNextRoomDefinition function. If it returns nullptr, log a warning and return without loading a new level.
+    UTDSRoomDefinition* NextRoom = GetNextRoomDefinition();
+    if (!NextRoom)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("LoadNextRoom: NextRoom is null"));
+        return;
+    }
+
+    if (NextRoom->LevelName.IsNone())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("LoadNextRoom: LevelName is None"));
+        return;
+    }
+
+	// Load the level specified in the NextRoom's LevelName using UGameplayStatics::OpenLevel. This will transition the player to the new room.
+    UGameplayStatics::OpenLevel(GetWorld(), NextRoom->LevelName);
+}

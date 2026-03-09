@@ -6,6 +6,9 @@
 #include "GameFramework/Character.h"
 #include "TDSEnemyCharacter.generated.h"
 
+// Forward declaration of the delegate
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDied, AActor*, DeadEnemy);
+
 UCLASS()
 class ATDSEnemyCharacter : public ACharacter
 {
@@ -14,6 +17,10 @@ class ATDSEnemyCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	ATDSEnemyCharacter();
+
+	// Delegate for when the enemy dies
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnEnemyDied OnEnemyDied;
 
 protected:
 	// Called when the game starts or when spawned

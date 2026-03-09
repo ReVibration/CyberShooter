@@ -23,8 +23,4 @@ public:
 	UFUNCTION()
 	void HandleGameOver(AController* DeadController);
 
-	// Load the next room when the player reaches the end of the current room
-	UFUNCTION(BlueprintCallable, Category = "Rooms")
-	void LoadNextRoom();
-
 };
