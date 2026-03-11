@@ -46,4 +46,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Run")
 	void LoadNextRoom();
 	
+	// This ensures that the same room is not generated twice in a row, by keeping track of the last generated room index for both combat and reward rooms.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Run")
+	int32 LastCombatRoomIndex = INDEX_NONE;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Run")
+	int32 LastRewardRoomIndex = INDEX_NONE;
 };
