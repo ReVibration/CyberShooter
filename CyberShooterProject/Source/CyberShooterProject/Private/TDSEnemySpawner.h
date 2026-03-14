@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "TDSEnemyCharacter.h"
 #include "TDSEnemySpawner.generated.h"
 
 UCLASS()
@@ -15,12 +16,15 @@ public:
 	// Sets default values for this actor's properties
 	ATDSEnemySpawner();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	/// Spawns an enemy of the specified class at the spawner's location and rotation.
+	UFUNCTION(BlueprintCallable)
+	ATDSEnemyCharacter* SpawnEnemy(TSubclassOf<ATDSEnemyCharacter> EnemyClass);
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+protected:
+	
+	// Called when the game starts or when spawned
+	UPROPERTY(EditAnywhere, Category = "Spawning")
+	USceneComponent* Root;
+
 
 };
