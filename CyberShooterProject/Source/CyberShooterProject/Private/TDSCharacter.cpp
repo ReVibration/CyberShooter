@@ -85,6 +85,9 @@ ATDSCharacter::ATDSCharacter()
 	// ===== Prevent mesh from blocking camera =====
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
+	// Get the player mesh (for use in blueprints)
+	PlayerMesh = GetMesh();
+
 }
 
 // Called when the game starts or when spawned

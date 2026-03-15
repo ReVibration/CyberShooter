@@ -32,6 +32,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void Heal(float HealAmount);
 
+	// Create a player mesh component to visualize the character
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USkeletalMeshComponent* PlayerMesh;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
