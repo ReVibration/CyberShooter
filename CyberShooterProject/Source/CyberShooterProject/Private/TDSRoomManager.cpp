@@ -11,7 +11,7 @@
 ATDSRoomManager::ATDSRoomManager()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 }
 
@@ -20,29 +20,12 @@ void ATDSRoomManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// Reset the count of alive enemies to 0 at the start of the room
+	AliveEnemyCount = 0;
 
-	// Get all enemy actors in the room and bind to their death events
-    TArray<AActor*> FoundEnemies;
-    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATDSEnemyCharacter::StaticClass(), FoundEnemies);
+	// Spawn enemies in the room based on the current room index and the number of available spawners
+	SpawnRoomEnemies();
 
-	// Set the initial count of alive enemies
-    AliveEnemyCount = FoundEnemies.Num();
-
-	// Bind to the death event of each enemy to track when they die
-    for (AActor* Actor : FoundEnemies)
-    {
-        ATDSEnemyCharacter* Enemy = Cast<ATDSEnemyCharacter>(Actor);
-        if (Enemy)
-        {
-            Enemy->OnEnemyDied.AddDynamic(this, &ATDSRoomManager::HandleEnemyDied);
-        }
-    }
-
-	// If there are no enemies in the room, consider it cleared immediately
-    if (AliveEnemyCount == 0)
-    {
-        OnRoomCleared();
-    }
 }
 
 int32 ATDSRoomManager::CalculateSpawnCount(int32 RoomIndex, int32 AvailableSpawnerCount) const
@@ -66,9 +49,16 @@ int32 ATDSRoomManager::CalculateSpawnCount(int32 RoomIndex, int32 AvailableSpawn
 
 void ATDSRoomManager::SpawnRoomEnemies()
 {
+	// Reset the count of alive enemies to 0 before spawning new ones
+	AliveEnemyCount = 0;
+
 	// Get all enemy spawner actors in the room
     TArray<AActor*> FoundSpawners;
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATDSEnemySpawner::StaticClass(), FoundSpawners);
+
+    UE_LOG(LogTemp, Warning, TEXT("SpawnRoomEnemies called"));
+    UE_LOG(LogTemp, Warning, TEXT("FoundSpawners count: %d"), FoundSpawners.Num());
+    UE_LOG(LogTemp, Warning, TEXT("DefaultEnemyClass: %s"), *GetNameSafe(DefaultEnemyClass));
 
 	// Convert the found actors to their specific spawner class and store them in a separate array for easier access
     TArray<ATDSEnemySpawner*> Spawners;
@@ -88,16 +78,24 @@ void ATDSRoomManager::SpawnRoomEnemies()
         return;
     }
 
+    if (!DefaultEnemyClass)
+    {
+        UE_LOG(LogTemp, Error, TEXT("SpawnRoomEnemies failed: DefaultEnemyClass is null."));
+        return;
+    }
 
-    // Get the game instance and load the next room
     UTDSGameInstance* GI = Cast<UTDSGameInstance>(GetGameInstance());
     if (!GI)
     {
+        UE_LOG(LogTemp, Error, TEXT("SpawnRoomEnemies failed: GameInstance was null."));
         return;
     }
+
 	// Calculate the number of enemies to spawn based on the current room index and the number of available spawners
 	const int32 RoomIndex = GI->CurrentRoomIndex;
     const int32 SpawnCount = CalculateSpawnCount(RoomIndex, Spawners.Num());
+
+    UE_LOG(LogTemp, Warning, TEXT("RoomIndex: %d | SpawnCount: %d"), RoomIndex, SpawnCount);
 
     for (int32 i = 0; i < Spawners.Num(); ++i)
     {
@@ -110,21 +108,25 @@ void ATDSRoomManager::SpawnRoomEnemies()
     for (int32 i = 0; i < SpawnCount; ++i)
     {
         ATDSEnemyCharacter* SpawnedEnemy = Spawners[i]->SpawnEnemy(DefaultEnemyClass);
+
         if (SpawnedEnemy)
         {
+            UE_LOG(LogTemp, Warning, TEXT("Spawned enemy: %s"), *GetNameSafe(SpawnedEnemy));
             SpawnedEnemy->OnEnemyDied.AddDynamic(this, &ATDSRoomManager::HandleEnemyDied);
             AliveEnemyCount++;
         }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to spawn enemy from spawner: %s"), *GetNameSafe(Spawners[i]));
+        }
     }
 
-	// If no enemies were spawned (e.g., due to spawner issues), consider the room cleared immediately to prevent soft-locking the player
+    UE_LOG(LogTemp, Warning, TEXT("AliveEnemyCount after spawning: %d"), AliveEnemyCount);
+
     if (AliveEnemyCount <= 0)
     {
-        UE_LOG(LogTemp, Warning, TEXT("No enemies were spawned. Completing room immediately."));
-        OnRoomCleared();
+        UE_LOG(LogTemp, Error, TEXT("No enemies spawned. Not clearing room automatically while debugging."));
     }
-
-    UE_LOG(LogTemp, Log, TEXT("Spawned %d enemies for room index %d"), AliveEnemyCount, RoomIndex);
 }
 
 
