@@ -88,6 +88,12 @@ ATDSCharacter::ATDSCharacter()
 	// Get the player mesh (for use in blueprints)
 	PlayerMesh = GetMesh();
 
+
+	// Create the weapon mesh
+	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	WeaponMesh->SetupAttachment(GetMesh(), TEXT("WeaponSocket"));
+	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponMesh->SetGenerateOverlapEvents(false);
 }
 
 // Called when the game starts or when spawned

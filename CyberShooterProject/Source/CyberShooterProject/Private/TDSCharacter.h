@@ -22,7 +22,11 @@ public:
 	// Sets default values for this character's properties
 	ATDSCharacter();
 	
-	// ---------------- Public Functions ----------------
+	// ---------------- Public Functions & Properties ----------------
+
+	// The static mesh component for the player's weapon
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
+	UStaticMeshComponent* WeaponMesh;
 
 	// Returns the current health percentage
 	UFUNCTION(BlueprintCallable, Category = "Health")
@@ -48,6 +52,7 @@ protected:
 
 private:
 	// ---------------- Components ----------------
+
 
 	// --- HUD ---
 
