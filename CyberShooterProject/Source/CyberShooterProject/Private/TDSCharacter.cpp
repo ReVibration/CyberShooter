@@ -77,11 +77,6 @@ ATDSCharacter::ATDSCharacter()
 	Camera->SetupAttachment(CameraBoom);
 	Camera->bUsePawnControlRotation = false;
 
-	// Create the muzzle location
-	const FVector SpawnLocation = Muzzle ? Muzzle->GetComponentLocation()
-		: GetActorLocation() + GetActorForwardVector() * 80.f;
-	const FRotator SpawnRotation = GetActorRotation();
-
 	// ===== Prevent mesh from blocking camera =====
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
@@ -218,28 +213,33 @@ void ATDSCharacter::StopFiring()
 	bIsFiring = false;
 	GetWorldTimerManager().ClearTimer(FireTimerHandle);
 }
-
 void ATDSCharacter::FireOnce()
 {
 	// Make sure we have a projectile class to spawn
 	if (!ProjectileClass) return;
+	if (!WeaponMesh) return;
 
-	// Determine spawn location and rotation
-	const FVector SpawnLocation = Muzzle
-		? Muzzle->GetComponentLocation() + FVector(0, 0, 20)
-		: GetActorLocation() + GetActorForwardVector() * 80.f + FVector(0, 0, 20);
+	// Default fallback
+	FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 80.f + FVector(0.f, 0.f, 20.f);
 
-	// Set spawn rotation to be the same as the character's rotation
+	// Use muzzle socket location if it exists
+	if (WeaponMesh->DoesSocketExist(TEXT("Muzzle")))
+	{
+		SpawnLocation = WeaponMesh->GetSocketLocation(TEXT("Muzzle"));
+	}
+
+	// Keep using the character's facing direction for projectile movement
 	const FRotator SpawnRotation = GetActorRotation();
 
-	// Set spawn parameters
+	// Add a small offset to the spawn location to prevent immediate collision with the player
+	SpawnLocation += GetActorForwardVector() * 15.f;
+
 	FActorSpawnParameters Params;
 	Params.Owner = this;
 	Params.Instigator = this;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	// Spawn the projectile
-	AActor* Spawned = GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, Params);
+	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, Params);
 }
 
 

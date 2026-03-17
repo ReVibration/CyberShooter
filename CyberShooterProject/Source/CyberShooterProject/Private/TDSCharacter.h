@@ -114,9 +114,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
 	TSubclassOf<AActor> ProjectileClass;
 
-	UPROPERTY(VisibleAnywhere, Category="Combat")
-	USceneComponent* Muzzle;
-
 	// A property that can change the fire rate 
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
 	float FireInterval = 0.25f;
