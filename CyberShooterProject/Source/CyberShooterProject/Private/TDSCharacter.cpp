@@ -23,7 +23,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
-
+#include "NiagaraFunctionLibrary.h"
 #include "TDSHUDWidget.h"
 #include "Blueprint/UserWidget.h"
 
@@ -120,12 +120,34 @@ void ATDSCharacter::BeginPlay()
 		}
 	}
 
+	// Store the weapon's default relative location for use in recoil
+	if (WeaponMesh)
+	{
+		WeaponDefaultRelativeLocation = WeaponMesh->GetRelativeLocation();
+	}
+
 }
 
 void ATDSCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	FaceMouseCursor();
+
+	// Handle recoil return
+	if (WeaponMesh)
+	{
+		// Smoothly interpolate the current weapon offset back to zero over time
+		WeaponCurrentOffset = FMath::VInterpTo(
+			WeaponCurrentOffset,
+			FVector::ZeroVector,
+			DeltaSeconds,
+			RecoilReturnSpeed
+		);
+
+		// Update the weapon mesh's relative location based on the default location plus the current recoil offset
+		WeaponMesh->SetRelativeLocation(WeaponDefaultRelativeLocation + WeaponCurrentOffset);
+	}
+
 }
 
 // Called to bind functionality to input
@@ -232,7 +254,7 @@ void ATDSCharacter::FireOnce()
 	const FRotator SpawnRotation = GetActorRotation();
 
 	// Add a small offset to the spawn location to prevent immediate collision with the player
-	SpawnLocation += GetActorForwardVector() * 15.f;
+	SpawnLocation += GetActorForwardVector() * 20.f;
 
 	FActorSpawnParameters Params;
 	Params.Owner = this;
@@ -240,6 +262,25 @@ void ATDSCharacter::FireOnce()
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, Params);
+
+	// Spawn muzzle flash effect if we have one and the socket exists
+	if (MuzzleFlashEffect && WeaponMesh && WeaponMesh->DoesSocketExist(TEXT("Muzzle")))
+	{
+		const FVector MuzzleLocation = WeaponMesh->GetSocketLocation(TEXT("Muzzle"));
+		const FRotator MuzzleRotation = WeaponMesh->GetSocketRotation(TEXT("Muzzle"));
+
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			MuzzleFlashEffect,
+			MuzzleLocation,
+			MuzzleRotation
+		);
+	}
+
+	// Apply recoil by setting the current weapon offset to the recoil distance.
+	WeaponCurrentOffset.X = -RecoilDistance;
+
+
 }
 
 

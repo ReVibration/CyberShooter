@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "NiagaraSystem.h"
 #include "TDSCharacter.generated.h"
+
 
 class UTDSHUDWidget;
 class UCameraComponent;
@@ -40,6 +42,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* PlayerMesh;
 
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -53,6 +56,20 @@ protected:
 private:
 	// ---------------- Components ----------------
 
+	// --- RECOIL ---
+	// The distance the weapon will move back when firing, and how quickly it will return to its original position.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Recoil")
+	float RecoilDistance = 6.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Recoil")
+	float RecoilReturnSpeed = 25.f;
+
+	// The Niagara system to use for the muzzle flash effect when firing.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Effects")
+	UNiagaraSystem* MuzzleFlashEffect;
+
+	// The default relative location of the weapon mesh, and the current offset from that location due to recoil.
+	FVector WeaponDefaultRelativeLocation = FVector::ZeroVector;
+	FVector WeaponCurrentOffset = FVector::ZeroVector;
 
 	// --- HUD ---
 
