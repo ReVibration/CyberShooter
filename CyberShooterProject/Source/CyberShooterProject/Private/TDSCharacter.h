@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "NiagaraSystem.h"
+#include "Camera/CameraShakeBase.h"
 #include "TDSCharacter.generated.h"
 
 
@@ -66,6 +67,10 @@ private:
 	// The Niagara system to use for the muzzle flash effect when firing.
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Effects")
 	UNiagaraSystem* MuzzleFlashEffect;
+
+	// The camera shake class to use when firing the weapon.
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Effects")
+	TSubclassOf<UCameraShakeBase> FireCameraShakeClass;
 
 	// The default relative location of the weapon mesh, and the current offset from that location due to recoil.
 	FVector WeaponDefaultRelativeLocation = FVector::ZeroVector;

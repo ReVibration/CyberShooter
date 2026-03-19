@@ -200,10 +200,6 @@ void ATDSCharacter::Move(const FInputActionValue& Value)
 // Handles starting the firing of projectiles
 void ATDSCharacter::StartFiring()
 {
-	UE_LOG(LogTemp, Warning, TEXT("StartFiring()  bIsFiring=%d  TimerActive=%d"),
-		bIsFiring,
-		GetWorldTimerManager().IsTimerActive(FireTimerHandle));
-
 	// If our flag says "firing" but the timer isn't active, we got desynced.
 	// Re-sync so we don't require a second click.
 	if (bIsFiring && !GetWorldTimerManager().IsTimerActive(FireTimerHandle))
@@ -280,6 +276,14 @@ void ATDSCharacter::FireOnce()
 	// Apply recoil by setting the current weapon offset to the recoil distance.
 	WeaponCurrentOffset.X = -RecoilDistance;
 
+	// Add the camera shake if we have a class for it
+	if (FireCameraShakeClass)
+	{
+		if (APlayerController* PC = Cast<APlayerController>(GetController()))
+		{
+			PC->ClientStartCameraShake(FireCameraShakeClass);
+		}
+	}
 
 }
 
