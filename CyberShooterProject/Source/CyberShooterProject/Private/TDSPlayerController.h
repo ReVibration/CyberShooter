@@ -22,6 +22,10 @@ public:
 	void ShowHUD();
 	void HideHUD();
 
+	// Function to show a damage flash on the screen when the player takes damage
+	UFUNCTION()
+	void ShowDamageFlash();
+
 protected:
 	
 
@@ -62,3 +66,4 @@ protected:
 	// A method to clear all UI
 	void ClearAllUI();
 };
+

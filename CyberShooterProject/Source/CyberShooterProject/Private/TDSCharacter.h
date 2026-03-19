@@ -145,6 +145,10 @@ private:
 	// Whether the player is currently firing
 	bool bIsFiring = false;
 
+	// The camera shake class to use when taking damage
+	UPROPERTY(EditDefaultsOnly, Category = "Damage|Effects")
+	TSubclassOf<UCameraShakeBase> DamageCameraShakeClass;
+
 	// ---------------- Functions ----------------
 
 	// Called when the character takes damage

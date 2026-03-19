@@ -21,6 +21,10 @@ class UTDSHUDWidget : public UUserWidget
 public:
 	// Called when the widget is constructed
 	void SetPlayer(ATDSCharacter* InPlayer);
+
+	// Function to show a damage flash on the screen when the player takes damage
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowDamageFlash();
 	
 protected:
 	// Tick function to update the health bar

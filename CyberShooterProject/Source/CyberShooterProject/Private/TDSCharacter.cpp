@@ -320,6 +320,24 @@ void ATDSCharacter::HandleTakeAnyDamage(
 	// Ignore non-positive damage
 	if (Damage <= 0.f) return;
 
+	// Show damage flash on the player's HUD if we have a player controller
+	if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetController()))
+	{
+		PC->ShowDamageFlash();
+	}
+
+	// Add camera shake if we have a class for it 
+	if (DamageCameraShakeClass)
+	{
+		if (APlayerController* PC = Cast<APlayerController>(GetController()))
+		{
+			if (PC->PlayerCameraManager)
+			{
+				PC->PlayerCameraManager->StartCameraShake(DamageCameraShakeClass);
+			}
+		}
+	}
+
 	// Decrease health and clamp to valid range
 	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
 

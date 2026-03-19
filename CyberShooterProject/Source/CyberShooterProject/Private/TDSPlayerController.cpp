@@ -177,3 +177,12 @@ void ATDSPlayerController::HideHUD()
 		ActiveHUD = nullptr;
 	}
 }
+
+// This function is called when the player takes damage and it will show a damage flash on the screen
+void ATDSPlayerController::ShowDamageFlash()
+{
+	if (ActiveHUD)
+	{
+		ActiveHUD->ShowDamageFlash();
+	}
+}
