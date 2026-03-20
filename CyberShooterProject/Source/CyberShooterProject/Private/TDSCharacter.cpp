@@ -15,8 +15,10 @@
 #include "Components/InputComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
-
+#include "Animation/AnimInstance.h"
+#include "TimerManager.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 
@@ -131,7 +133,12 @@ void ATDSCharacter::BeginPlay()
 void ATDSCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	FaceMouseCursor();
+	
+	// Only rotate to face the mouse cursor if we're alive
+	if (!bIsDead) {
+		FaceMouseCursor();
+	}
+		
 
 	// Handle recoil return
 	if (WeaponMesh)
@@ -320,6 +327,9 @@ void ATDSCharacter::HandleTakeAnyDamage(
 	// Ignore non-positive damage
 	if (Damage <= 0.f) return;
 
+	// If we're already dead, ignore further damage
+	if (bIsDead) return;
+
 	// Show damage flash on the player's HUD if we have a player controller
 	if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetController()))
 	{
@@ -344,13 +354,8 @@ void ATDSCharacter::HandleTakeAnyDamage(
 	// Check for death
 	if(CurrentHealth <= 0.f)
 	{
-		ATDSGameMode* GM = Cast<ATDSGameMode>(GetWorld()->GetAuthGameMode());
-
-		if (GM)
-		{
-			GM->HandleGameOver(GetController());
-		}
-		
+		// Handle death (play animation, disable input, trigger game over after delay)
+		HandleDeath();
 	}
 }
 
@@ -389,4 +394,63 @@ bool ATDSCharacter::GetMouseAimPointOnPlayerPlane(APlayerController& PC, FVector
 
 	OutAimPoint = RayOrigin + RayDir * T;
 	return true;
+}
+
+void ATDSCharacter::HandleDeath()
+{
+	// If already dead, do nothing (prevents multiple triggers if taking damage after death)
+	if (bIsDead)
+	{
+		return;
+	}
+
+	bIsDead = true;
+
+	// Stop firing immediately
+	StopFiring();
+
+	// Stop movement
+	GetCharacterMovement()->DisableMovement();
+
+	// Optional: disable collision so enemies stop interacting physically
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	// Prevent further input
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		DisableInput(PC);
+	}
+
+	float DeathDelay = 1.0f;
+
+	// Play death animation if available
+	if (GetMesh())
+	{
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		{
+			if (DeathMontage)
+			{
+				const float MontageLength = AnimInstance->Montage_Play(DeathMontage);
+				if (MontageLength > 0.f)
+				{
+					DeathDelay = MontageLength - 0.5;
+				}
+			}
+		}
+	}
+
+	// Delay game over until animation finishes
+	FTimerHandle DeathTimerHandle;
+	GetWorldTimerManager().SetTimer(
+		DeathTimerHandle,
+		[this]()
+		{
+			if (ATDSGameMode* GM = Cast<ATDSGameMode>(GetWorld()->GetAuthGameMode()))
+			{
+				GM->HandleGameOver(GetController());
+			}
+		},
+		DeathDelay,
+		false
+	);
 }

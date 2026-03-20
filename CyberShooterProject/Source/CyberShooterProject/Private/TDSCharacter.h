@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "NiagaraSystem.h"
 #include "Camera/CameraShakeBase.h"
+#include "Animation/AnimMontage.h"
 #include "TDSCharacter.generated.h"
 
 
@@ -43,6 +44,13 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USkeletalMeshComponent* PlayerMesh;
 
+	// Whether the character is currently dead
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State")
+	bool bIsDead = false;
+
+	// The animation montage to play when the character dies
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	UAnimMontage* DeathMontage;
 
 protected:
 	// Called when the game starts or when spawned
@@ -179,4 +187,7 @@ private:
 
 	// This will get the mouse aim point on the player to make sure that walls are not affecting rotation
 	bool GetMouseAimPointOnPlayerPlane(APlayerController& PC, FVector& OutAimPoint) const;
+
+	// Handles the character's death, including playing the death animation, spawning effects, and disabling input
+	void HandleDeath();
 };
