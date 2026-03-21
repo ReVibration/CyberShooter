@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Animation/AnimMontage.h"
 #include "TDSEnemyAIController.generated.h"
 
 UENUM(BlueprintType)
@@ -26,6 +27,8 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 	// Called every frame
 	virtual void Tick(float DeltaSeconds) override;
+
+	void StopAttacking();
 
 protected:
 
@@ -146,11 +149,20 @@ private:
 
 	// Functions to manage attacking behavior
 	void StartAttacking();
-	void StopAttacking();
+
 	void DoMeleeAttack();
 
 	// Whether the AI is currently attacking
 	bool bIsAttacking = false;
+
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	float AttackCooldown = 0.5f; // Time in seconds between attacks
+
+	// Whether an attack is currently in progress (used to prevent overlapping attacks and ensure proper timing)
+	bool bAttackInProgress = false;
 
 	// Reference to the player pawn
 	UPROPERTY()

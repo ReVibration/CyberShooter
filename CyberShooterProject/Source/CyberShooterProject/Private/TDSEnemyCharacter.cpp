@@ -5,8 +5,11 @@
 
 #include "Engine/Engine.h"
 #include "TDSEnemyAIController.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
+#include "Animation/AnimInstance.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "TimerManager.h"
 
 // Sets default values
 ATDSEnemyCharacter::ATDSEnemyCharacter()
@@ -76,8 +79,14 @@ void ATDSEnemyCharacter::HandleTakeAnyDamage(
 	AActor* DamageCauser
 )
 {
+	// If already dead, ignore further damage
+	if (bIsDead)
+	{
+		return;
+	}
+
 	// Reduce health by damage amount
-	CurrentHealth -= Damage;
+	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
 
 	// Debug: Print current health to the screen
 	if (GEngine)
@@ -93,8 +102,107 @@ void ATDSEnemyCharacter::HandleTakeAnyDamage(
 	// Check for death
 	if (CurrentHealth <= 0.f)
 	{
-		OnEnemyDied.Broadcast(this);
-		// Handle enemy death (e.g., play animation, destroy actor, etc.)
-		Destroy();
+		HandleDeath();
 	}
+}
+
+void ATDSEnemyCharacter::PerformMeleeHit()
+{
+	// If already dead, do not perform attack
+	if (bIsDead)
+	{
+		return;
+	}
+
+	// Get the player pawn to apply damage to
+	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
+	if (!PlayerPawn) return;
+
+	// Check if player is within attack range
+	const float Dist = FVector::Dist2D(GetActorLocation(), PlayerPawn->GetActorLocation());
+	if (Dist > AttackRange) return;
+
+	// Apply damage to the player
+	UGameplayStatics::ApplyDamage(
+		PlayerPawn,
+		AttackDamage,
+		GetController(),
+		this,
+		UDamageType::StaticClass()
+	);
+}
+
+void ATDSEnemyCharacter::HandleDeath()
+{
+	if (bIsDead)
+	{
+		return;
+	}
+
+	bIsDead = true;
+
+	// Stop AI logic
+	if (ATDSEnemyAIController* EnemyAI = Cast<ATDSEnemyAIController>(GetController()))
+	{
+		EnemyAI->StopMovement();
+		EnemyAI->StopAttacking();
+	}
+
+	// Disable movement
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->DisableMovement();
+		MoveComp->StopMovementImmediately();
+	}
+
+	// Disable capsule collision so the dead enemy no longer blocks gameplay
+	if (UCapsuleComponent* Capsule = GetCapsuleComponent())
+	{
+		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	// Optional: disable mesh collision too
+	if (GetMesh())
+	{
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	// Broadcast death event here if your room manager binds to the enemy actor
+	OnEnemyDied.Broadcast(this);
+
+	// Play death montage if available
+	if (DeathMontage && GetMesh())
+	{
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		{
+			const float Duration = AnimInstance->Montage_Play(DeathMontage) - 0.5f;
+
+			if (Duration > 0.f)
+			{
+				GetWorldTimerManager().SetTimer(
+					DeathDestroyTimerHandle,
+					this,
+					&ATDSEnemyCharacter::DestroyEnemy,
+					Duration,
+					false
+				);
+				return;
+			}
+		}
+	}
+
+	// Fallback if no montage is assigned
+	GetWorldTimerManager().SetTimer(
+		DeathDestroyTimerHandle,
+		this,
+		&ATDSEnemyCharacter::DestroyEnemy,
+		DeathDestroyDelay,
+		false
+	);
+}
+
+// Function to destroy the enemy actor after death animation finishes
+void ATDSEnemyCharacter::DestroyEnemy()
+{
+	Destroy();
 }

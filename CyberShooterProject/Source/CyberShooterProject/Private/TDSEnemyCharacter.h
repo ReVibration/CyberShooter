@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Animation/AnimMontage.h"
 #include "TDSEnemyCharacter.generated.h"
 
 // Forward declaration of the delegate
@@ -22,7 +23,43 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnEnemyDied OnEnemyDied;
 
+	// Function to perform melee hit logic, called from animation notify
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void PerformMeleeHit();
+
+	// The animation montage to play when the enemy attacks
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	UAnimMontage* MeleeAttackMontage;
+
+	// The animation montage to play when the enemy dies
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+	UAnimMontage* DeathMontage;
+
+	// Function to check if the enemy is dead
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	bool IsDead() const { return bIsDead; }
+
+	// Function to handle the enemy's death, called when health reaches zero
+	UFUNCTION()
+	void HandleDeath();
+
 protected:
+
+	// Function to destroy the enemy actor after death animation finishes
+	UFUNCTION()
+	void DestroyEnemy();
+
+	// Flag to track if the enemy is dead
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Combat")
+	bool bIsDead = false;
+
+	// Time to wait after death before destroying the actor
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float DeathDestroyDelay = 2.0f;
+
+	// Timer handle for managing delayed destruction after death
+	FTimerHandle DeathDestroyTimerHandle;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -31,6 +68,14 @@ protected:
 	float MaxHealth = 100.f;
 
 	float CurrentHealth;
+
+	// Distance at which the AI can attack the player
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float AttackRange = 300.f;
+
+	// Damage dealt per attack
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float AttackDamage = 10.f;
 
 	// Function to handle taking damage
 	UFUNCTION()
@@ -41,6 +86,7 @@ protected:
 		class AController* InstigatedBy,
 		AActor* DamageCauser
 	);
+
 
 public:	
 	// Called every frame

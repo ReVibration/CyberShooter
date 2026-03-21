@@ -6,6 +6,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
 #include "TimerManager.h"
+#include "Animation/AnimInstance.h"
+#include "TDSEnemyCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/DamageType.h"
 #include "GameFramework/Character.h"
@@ -92,15 +94,16 @@ void ATDSEnemyAIController::UpdateStateTransitions()
 		// In Attacking state, if the player moves out of attack range but is still within chase distance, switch back to Chasing. If the player moves out of chase distance, switch back to Idle
 		case EEnemyState::Attacking:
 		{
-			if (Dist > AttackRange)
-			{
-				SetState(EEnemyState::Chasing);
-			}
-			else if (Dist > ChaseDistance)
+			if (Dist > ChaseDistance)
 			{
 				SetState(EEnemyState::Idle);
 			}
+			else if (Dist > AttackRange)
+			{
+				SetState(EEnemyState::Chasing);
+			}
 			break;
+		
 		}
 	}
 }
@@ -294,53 +297,95 @@ void ATDSEnemyAIController::StartAttacking()
 	// Perform the first attack immediately
 	DoMeleeAttack();
 
-	// Set timer for subsequent attacks
-	GetWorldTimerManager().SetTimer(
-		AttackTimerHandle,
-		this,
-		&ATDSEnemyAIController::DoMeleeAttack,
-		AttackInterval,
-		true
-	);
 }
 
 void ATDSEnemyAIController::StopAttacking()
 {
-	// Clear attacking flag
+	// Clear attacking flags
 	bIsAttacking = false;
+	bAttackInProgress = false;
+
 	// Clear the attack timer
 	GetWorldTimerManager().ClearTimer(AttackTimerHandle);
-	
 	// Clear focus to allow movement again
 	ClearFocus(EAIFocusPriority::Gameplay);
+
+	// Stop the attack animation montage if it's still playing to ensure we don't get stuck in the attack animation if we switch states in the middle of an attack
+	if (APawn* ControlledPawn = GetPawn())
+	{
+		if (ATDSEnemyCharacter* ControlledCharacter = Cast<ATDSEnemyCharacter>(GetPawn()))
+		{
+			if (UAnimInstance* AnimInstance = ControlledCharacter->GetMesh()->GetAnimInstance())
+			{
+				if (ControlledCharacter->MeleeAttackMontage)
+				{
+					AnimInstance->Montage_Stop(0.2f,ControlledCharacter -> MeleeAttackMontage);
+				}
+			}
+		}
+	}
 }
 
 void ATDSEnemyAIController::DoMeleeAttack()
 {
 	// Ensure we have valid references
-	if (!PlayerPawn || !GetPawn()) return;
+	if (!PlayerPawn || !GetPawn() || !bIsAttacking || bAttackInProgress) return;
 
 	// Calculate distance to player
 	const float Dist = FVector::Dist2D(PlayerPawn->GetActorLocation(), GetPawn()->GetActorLocation());
 
 	// If within attack range, apply damage
-	if (Dist <= AttackRange)
-	{
-		// Apply damage to the player
-		UGameplayStatics::ApplyDamage(
-			PlayerPawn,
-			AttackDamage,
-			this,
-			GetPawn(),
-			UDamageType::StaticClass()
-		);
-	}
-	else
+	if (Dist > AttackRange)
 	{
 		// If out of range, stop attacking
 		StopAttacking();
 		return;
 	}
+	// Get the enemy character and play the attack animation. 
+	if (ATDSEnemyCharacter* ControlledCharacter = Cast<ATDSEnemyCharacter>(GetPawn()))
+	{
+		if (UAnimInstance* AnimInstance = ControlledCharacter->GetMesh()->GetAnimInstance())
+		{
+			if (ControlledCharacter->MeleeAttackMontage)
+			{
+				AnimInstance->Montage_Play(ControlledCharacter->MeleeAttackMontage,1.2f);
+				FOnMontageEnded EndDelegate;
+				EndDelegate.BindUObject(this, &ATDSEnemyAIController::OnAttackMontageEnded);
+				AnimInstance->Montage_SetEndDelegate(EndDelegate, ControlledCharacter->MeleeAttackMontage);
+				return;
+			}
+		}
+	}
+
+
+
+	// Fallback if montage is missing
+	bAttackInProgress = false;
+}
+
+void ATDSEnemyAIController::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	// Ensure the montage that ended is the one we're using for melee attacks. If it's not, we ignore it since it might be an unrelated animation montage.
+	if (ATDSEnemyCharacter* ControlledCharacter = Cast<ATDSEnemyCharacter>(GetPawn()))
+		if (Montage != ControlledCharacter->MeleeAttackMontage)
+		{
+			return;
+		}
+
+	bAttackInProgress = false;
+	// If the attack was interrupted 
+	if (!bIsAttacking)
+	{
+		return;
+	}
+
+	GetWorldTimerManager().SetTimer(
+		AttackTimerHandle,
+		this,
+		&ATDSEnemyAIController::DoMeleeAttack,
+		AttackCooldown,
+		false
+	);
 }
 
 void ATDSEnemyAIController::UpdateSlotTarget()
