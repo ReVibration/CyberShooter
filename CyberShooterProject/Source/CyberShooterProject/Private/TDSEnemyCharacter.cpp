@@ -175,7 +175,7 @@ void ATDSEnemyCharacter::HandleDeath()
 	{
 		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 		{
-			const float Duration = AnimInstance->Montage_Play(DeathMontage) - 0.5f;
+			const float Duration = AnimInstance->Montage_Play(DeathMontage,1.2f) - 1.0f;
 
 			if (Duration > 0.f)
 			{

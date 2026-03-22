@@ -42,6 +42,16 @@ void ATDSEnemyAIController::Tick(float DeltaSeconds)
 	// If we don't have a pawn, do nothing
 	if (!GetPawn()) return; 
 
+	// If the pawn is dead, stop all movement and do nothing else
+	if (ATDSEnemyCharacter* EnemyCharacter = Cast<ATDSEnemyCharacter>(GetPawn()))
+	{
+		if (EnemyCharacter->IsDead())
+		{
+			StopMovement();
+			return;
+		}
+	}
+
 	if (!PlayerPawn)
 	{
 		// Try to get the player pawn again if we don't have it
@@ -112,6 +122,15 @@ void ATDSEnemyAIController::SetState(EEnemyState NewState)
 {
 	// If we're already in the desired state, do nothing
 	if (State == NewState) return; 
+
+	// Guard against trying to change state if we don't have a pawn or if the pawn is dead
+	if (ATDSEnemyCharacter* EnemyCharacter = Cast<ATDSEnemyCharacter>(GetPawn()))
+	{
+		if (EnemyCharacter->IsDead())
+		{
+			return;
+		}
+	}
 
 	switch (State)
 	{
@@ -328,6 +347,15 @@ void ATDSEnemyAIController::StopAttacking()
 
 void ATDSEnemyAIController::DoMeleeAttack()
 {
+	// If the pawn is dead, stop all movement and do nothing else
+	if (ATDSEnemyCharacter* EnemyCharacter = Cast<ATDSEnemyCharacter>(GetPawn()))
+	{
+		if (EnemyCharacter->IsDead())
+		{
+			StopMovement();
+			return;
+		}
+	}
 	// Ensure we have valid references
 	if (!PlayerPawn || !GetPawn() || !bIsAttacking || bAttackInProgress) return;
 
