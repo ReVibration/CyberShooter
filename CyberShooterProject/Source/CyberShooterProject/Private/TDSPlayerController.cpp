@@ -89,15 +89,11 @@ void ATDSPlayerController::ShowGameOver()
 	if (ActiveGameOver)
 	{
 		// If it is found then add it to the view port in a higher order
-		ActiveGameOver->AddToViewport(200); // high Z-order
+		ActiveGameOver->AddToViewport(10);
 	}
 
 	// Set the game over input mode
 	SetGameOverInputMode();
-
-	// Hard stop input (prevents spinning / moving)
-	SetIgnoreMoveInput(true);
-	SetIgnoreLookInput(true);
 
 	// Optional pause (UI still works)
 	SetPause(true);
@@ -148,23 +144,19 @@ void ATDSPlayerController::SetGameOverInputMode()
 {
 	bShowMouseCursor = true;
 
-	// We don't want click events for gameplay
-	bEnableClickEvents = false;
-	bEnableMouseOverEvents = false;
-
-	SetIgnoreMoveInput(false);
-	SetIgnoreLookInput(false);
+	SetIgnoreMoveInput(true);
+	SetIgnoreLookInput(true);
 
 	FInputModeGameAndUI Mode;
 	Mode.SetHideCursorDuringCapture(false);
 	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 
-	// Important: focus the viewport so first click is not “just focus”
-	Mode.SetWidgetToFocus(nullptr);
+	// If there is a active game over take that to be the widget
+	if (ActiveGameOver) {
+		Mode.SetWidgetToFocus(ActiveGameOver->TakeWidget());
+	}
 
 	SetInputMode(Mode);
-
-	SetPause(false);
 }
 
 
