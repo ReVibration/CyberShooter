@@ -3,7 +3,9 @@
 
 #include "TDSPlayerController.h"
 #include "TDSHUDWidget.h"
+#include "TDSGameOverWidget.h"
 #include "TDSCharacter.h"
+#include "TDSGameInstance.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -85,9 +87,13 @@ void ATDSPlayerController::ShowGameOver()
 	if (!GameOverClass) return;
 
 	// Get the game over class
-	ActiveGameOver = CreateWidget<UUserWidget>(this, GameOverClass);
+	ActiveGameOver = CreateWidget<UTDSGameOverWidget>(this, GameOverClass);
 	if (ActiveGameOver)
 	{
+		if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
+		{
+			ActiveGameOver->SetRunStats(GI->GetCurrentRunStats());
+		}
 		// If it is found then add it to the view port in a higher order
 		ActiveGameOver->AddToViewport(10);
 	}

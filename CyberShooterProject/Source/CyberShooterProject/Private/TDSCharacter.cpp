@@ -7,7 +7,7 @@
 
 #include "TDSGameMode.h"
 #include "TDSPlayerController.h"
-
+#include "TDSGameInstance.h"
 #include "Camera/CameraComponent.h"
 #include "TDSSpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -453,4 +453,10 @@ void ATDSCharacter::HandleDeath()
 		DeathDelay,
 		false
 	);
+
+	if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
+	{
+		GI->RecordRoomCleared();
+		UE_LOG(LogTemp, Warning, TEXT("Time survived after finalise = %f"), GI->GetCurrentRunStats().TimeSurvivedSeconds);
+	}
 }

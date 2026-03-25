@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
 #include "TDSRoomDefinition.h"
+#include "TDSRunStats.h"
 #include "TDSGameInstance.generated.h"
 
 
@@ -14,6 +15,22 @@ class UTDSGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+
+	// This struct holds the current run stats
+	UPROPERTY(BlueprintReadOnly)
+	FTDSRunStats CurrentRunStats;
+
+	// This is the time when the current run started, it can be used to calculate the time survived for the current run.
+	UPROPERTY(BlueprintReadOnly)
+	double RunStartTimeSeconds = 0.0;
+
+	/// Functions to manage the run stats, these can be called from Blueprints or C++ code to update the stats during the run and to finalise them when the run ends.
+	void ResetRunStats();
+	void StartRunStatsTracking();
+	void RecordRoomCleared();
+	void RecordEnemyEliminated();
+	void FinaliseRunStats();
+	const FTDSRunStats& GetCurrentRunStats() const;
 
 	/// Function to load the main menu level, can be called from Blueprints
 	UFUNCTION(BlueprintCallable)

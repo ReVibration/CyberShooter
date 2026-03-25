@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
 #include "Animation/AnimInstance.h"
+#include "TDSGameInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TimerManager.h"
 
@@ -199,6 +200,12 @@ void ATDSEnemyCharacter::HandleDeath()
 		DeathDestroyDelay,
 		false
 	);
+
+	// Update run stats in the game instance to record that an enemy has been eliminated. This can be used to track stats for the current run and display them in the UI or use them for other gameplay purposes.
+	if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
+	{
+		GI->RecordRoomCleared();
+	}
 }
 
 // Function to destroy the enemy actor after death animation finishes

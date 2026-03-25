@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "TDSGameOverWidget.h"
 #include "TDSPlayerController.generated.h"
 
 
@@ -47,7 +48,7 @@ protected:
 
 	//Reference to the game over widget class, set in the editor
 	UPROPERTY(EditAnywhere, Category= "UI")
-	TSubclassOf<class UUserWidget> GameOverClass;
+	TSubclassOf<UTDSGameOverWidget> GameOverClass;
 
 	// Reference to the HUD of the game for the player
 	UPROPERTY(EditAnywhere, Category = "UI")
@@ -61,7 +62,7 @@ protected:
 	UTDSHUDWidget* ActiveHUD = nullptr;
 
 	UPROPERTY()
-	UUserWidget* ActiveGameOver = nullptr;
+	UTDSGameOverWidget* ActiveGameOver = nullptr;
 
 	// A method to clear all UI
 	void ClearAllUI();
