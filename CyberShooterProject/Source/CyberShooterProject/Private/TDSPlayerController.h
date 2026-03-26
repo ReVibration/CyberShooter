@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "TDSGameOverWidget.h"
+#include "TDSPauseMenuWidget.h"
 #include "TDSPlayerController.generated.h"
 
 
@@ -20,8 +21,12 @@ public:
 
 	// Function to show the game over screen
 	void ShowGameOver();
+	void ShowPauseMenu();
+	void HidePauseMenu();
 	void ShowHUD();
 	void HideHUD();
+
+	void TogglePauseMenu();
 
 	// Function to show a damage flash on the screen when the player takes damage
 	UFUNCTION()
@@ -41,6 +46,7 @@ protected:
 	void SetGameInputMode();
 	void SetMenuInputMode();
 	void SetGameOverInputMode();
+	void SetPauseMenuInputMode();
 
 	//Reference to the main menu widget class, set in the editor
 	UPROPERTY(EditAnywhere, Category="UI")
@@ -54,6 +60,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<class UTDSHUDWidget> HUDClass;
 
+	// Reference to the pause menu widget class, set in the editor
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UTDSPauseMenuWidget> PauseMenuClass;
+
 	// ACTIVE WIDGET instances for different menus
 	UPROPERTY()
 	UUserWidget* ActiveMainMenu = nullptr;
@@ -63,6 +73,9 @@ protected:
 
 	UPROPERTY()
 	UTDSGameOverWidget* ActiveGameOver = nullptr;
+
+	UPROPERTY()
+	UTDSPauseMenuWidget* ActivePauseMenu = nullptr;
 
 	// A method to clear all UI
 	void ClearAllUI();

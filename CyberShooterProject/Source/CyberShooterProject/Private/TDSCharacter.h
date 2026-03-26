@@ -62,6 +62,7 @@ protected:
 	// Called when the game starts to setup inputs
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+
 private:
 	// ---------------- Components ----------------
 
@@ -138,6 +139,10 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	UInputAction* FireAction;
 
+	// Mapping for pause
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	UInputAction* PauseAction;
+
 	// --- Combat ---
 
 	// This allows us to change the projectile when we want to
@@ -172,6 +177,10 @@ private:
 	// Called when the player want's to move
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
+	
+	// Called when the player wants to pause the game
+	UFUNCTION()
+	void HandlePausePressed();
 
 	// Handles the rotation of the character to face the mouse cursor
 	void FaceMouseCursor();

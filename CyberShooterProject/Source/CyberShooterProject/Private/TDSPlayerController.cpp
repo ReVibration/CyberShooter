@@ -188,3 +188,84 @@ void ATDSPlayerController::ShowDamageFlash()
 		ActiveHUD->ShowDamageFlash();
 	}
 }
+
+void ATDSPlayerController::ShowPauseMenu()
+{
+	// Do not open pause menu if we are already showing it
+	if (ActivePauseMenu)
+	{
+		return;
+	}
+
+	// Do not pause over the main menu
+	FString LevelName = GetWorld()->GetMapName();
+	if (LevelName.Contains("MainMenulevel"))
+	{
+		return;
+	}
+
+	// Do not allow pause if game over is already showing
+	if (ActiveGameOver)
+	{
+		return;
+	}
+
+	// Make sure we have a valid class
+	if (!PauseMenuClass)
+	{
+		return;
+	}
+
+	ActivePauseMenu = CreateWidget<UTDSPauseMenuWidget>(this, PauseMenuClass);
+	if (ActivePauseMenu)
+	{
+		ActivePauseMenu->AddToViewport(5);
+	}
+
+	SetPause(true);
+	SetPauseMenuInputMode();
+}
+
+void ATDSPlayerController::HidePauseMenu()
+{
+	if (ActivePauseMenu)
+	{
+		ActivePauseMenu->RemoveFromParent();
+		ActivePauseMenu = nullptr;
+	}
+
+	SetPause(false);
+	SetGameInputMode();
+}
+
+void ATDSPlayerController::TogglePauseMenu()
+{
+	if (ActivePauseMenu)
+	{
+		HidePauseMenu();
+	}
+	else
+	{
+		ShowPauseMenu();
+	}
+}
+
+void ATDSPlayerController::SetPauseMenuInputMode()
+{
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+
+	SetIgnoreMoveInput(true);
+	SetIgnoreLookInput(true);
+
+	FInputModeUIOnly Mode;
+	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+
+	if (ActivePauseMenu)
+	{
+		Mode.SetWidgetToFocus(ActivePauseMenu->TakeWidget());
+	}
+
+	SetInputMode(Mode);
+}

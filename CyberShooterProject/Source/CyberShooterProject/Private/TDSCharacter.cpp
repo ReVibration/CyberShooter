@@ -186,6 +186,12 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ATDSCharacter::StopFiring);
 	EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Canceled, this, &ATDSCharacter::StopFiring);
 
+	// Bind pause action
+	if (PauseAction)
+	{
+		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ATDSCharacter::HandlePausePressed);
+	}
+
 }
 
 // Called when the player wants to move
@@ -454,4 +460,12 @@ void ATDSCharacter::HandleDeath()
 		false
 	);
 
+}
+
+void ATDSCharacter::HandlePausePressed()
+{
+	if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetController()))
+	{
+		PC->TogglePauseMenu();
+	}
 }
