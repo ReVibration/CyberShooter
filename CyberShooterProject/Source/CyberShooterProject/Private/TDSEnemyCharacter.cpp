@@ -171,6 +171,12 @@ void ATDSEnemyCharacter::HandleDeath()
 	// Broadcast death event here if your room manager binds to the enemy actor
 	OnEnemyDied.Broadcast(this);
 
+	// Update run stats in the game instance to record that an enemy has been eliminated. This can be used to track stats for the current run and display them in the UI or use them for other gameplay purposes.
+	if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
+	{
+		GI->RecordEnemyEliminated();
+	}
+
 	// Play death montage if available
 	if (DeathMontage && GetMesh())
 	{
@@ -201,11 +207,7 @@ void ATDSEnemyCharacter::HandleDeath()
 		false
 	);
 
-	// Update run stats in the game instance to record that an enemy has been eliminated. This can be used to track stats for the current run and display them in the UI or use them for other gameplay purposes.
-	if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
-	{
-		GI->RecordRoomCleared();
-	}
+
 }
 
 // Function to destroy the enemy actor after death animation finishes

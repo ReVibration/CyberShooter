@@ -26,7 +26,7 @@ void UTDSGameOverWidget::RefreshStatsText()
 	if (RoomsClearedText)
 	{
 		RoomsClearedText->SetText(
-			FText::FromString(FString::Printf(TEXT("Rooms Cleared: %d"), CachedRunStats.RoomsCleared))
+			FText::FromString(FString::Printf(TEXT("Enemy Rooms Cleared: %d"), CachedRunStats.RoomsCleared))
 		);
 	}
 

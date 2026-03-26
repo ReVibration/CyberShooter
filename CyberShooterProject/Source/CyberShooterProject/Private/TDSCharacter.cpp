@@ -454,9 +454,4 @@ void ATDSCharacter::HandleDeath()
 		false
 	);
 
-	if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
-	{
-		GI->RecordRoomCleared();
-		UE_LOG(LogTemp, Warning, TEXT("Time survived after finalise = %f"), GI->GetCurrentRunStats().TimeSurvivedSeconds);
-	}
 }
