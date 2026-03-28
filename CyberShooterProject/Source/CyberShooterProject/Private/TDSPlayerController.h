@@ -22,6 +22,8 @@ public:
 	// Function to show the game over screen
 	void ShowGameOver();
 	void ShowPauseMenu();
+
+	UFUNCTION(BlueprintCallable)
 	void HidePauseMenu();
 	void ShowHUD();
 	void HideHUD();

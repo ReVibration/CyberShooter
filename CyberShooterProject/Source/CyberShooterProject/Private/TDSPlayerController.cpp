@@ -259,7 +259,8 @@ void ATDSPlayerController::SetPauseMenuInputMode()
 	SetIgnoreMoveInput(true);
 	SetIgnoreLookInput(true);
 
-	FInputModeUIOnly Mode;
+	FInputModeGameAndUI Mode;
+	Mode.SetHideCursorDuringCapture(false);
 	Mode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
 
 	if (ActivePauseMenu)
