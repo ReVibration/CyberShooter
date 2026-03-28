@@ -34,6 +34,10 @@ public:
 	UFUNCTION()
 	void ShowDamageFlash();
 
+	// Function to get the active HUD widget, so other classes can call functions on it (like showing the damage flash)
+	UFUNCTION(BlueprintCallable)
+	UTDSHUDWidget* GetHUDWidget() const { return ActiveHUD; }
+
 protected:
 	
 

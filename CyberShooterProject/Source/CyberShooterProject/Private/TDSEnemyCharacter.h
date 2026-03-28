@@ -43,6 +43,15 @@ public:
 	UFUNCTION()
 	void HandleDeath();
 
+
+	// Returns the current health value
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	float GetCurrentHealth() const { return CurrentHealth; }
+
+	// Returns the maximum health value
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	float GetMaxHealth() const { return MaxHealth; }
+
 protected:
 
 	// Function to destroy the enemy actor after death animation finishes
@@ -68,6 +77,7 @@ protected:
 	float MaxHealth = 100.f;
 
 	float CurrentHealth;
+
 
 	// Distance at which the AI can attack the player
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")

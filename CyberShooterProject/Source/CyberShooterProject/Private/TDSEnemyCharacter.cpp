@@ -9,6 +9,8 @@
 #include "Components/CapsuleComponent.h"
 #include "Animation/AnimInstance.h"
 #include "TDSGameInstance.h"
+#include "TDSPlayerController.h"
+#include "TDSHUDWidget.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "TimerManager.h"
 
@@ -89,17 +91,13 @@ void ATDSEnemyCharacter::HandleTakeAnyDamage(
 	// Reduce health by damage amount
 	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
 
-	// Debug: Print current health to the screen
-	if (GEngine)
+	if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetWorld()->GetFirstPlayerController()))
 	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,
-			1.f,
-			FColor::Red,
-			FString::Printf(TEXT("Enemy Health: %.0f"), CurrentHealth)
-		);
+		if (UTDSHUDWidget* HUD = PC->GetHUDWidget())
+		{
+			HUD->ShowEnemyHealth(this);
+		}
 	}
-
 	// Check for death
 	if (CurrentHealth <= 0.f)
 	{
