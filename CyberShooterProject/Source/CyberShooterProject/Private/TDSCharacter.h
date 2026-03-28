@@ -36,6 +36,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	float GetHealthPercent() const { return (MaxHealth > 0.f) ? (CurrentHealth / MaxHealth) : 0.f; }
 
+	// Returns the current health value
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	float GetCurrentHealth() const { return CurrentHealth; }
+
+	// Returns the maximum health value
+	UFUNCTION(BlueprintCallable, Category = "Health")
+	float GetMaxHealth() const { return MaxHealth; }
+
 	// Applies healing to the character, ensuring it does not exceed MaxHealth
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void Heal(float HealAmount);

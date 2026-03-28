@@ -8,6 +8,7 @@
 
 // Forward declarations
 class UProgressBar;
+class UTextBlock;
 class ATDSCharacter;
 
 /**
@@ -34,6 +35,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* PB_Health = nullptr;
 
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* PlayerHealthText = nullptr;
+
+	void UpdateHealthDisplay();
 private:
 	// Reference to the player character to access health information
 	UPROPERTY()
