@@ -6,6 +6,7 @@
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "TDSCharacter.h"
+#include "TDSGameInstance.h"
 #include "TDSEnemyCharacter.h"
 #include "TimerManager.h"
 
@@ -21,6 +22,8 @@ void UTDSHUDWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	// Update the health bar if we have a valid player reference
 	UpdateHealthDisplay();
+	RefreshStatsText();
+
 }
 
 void UTDSHUDWidget::UpdateHealthDisplay()
@@ -134,5 +137,26 @@ void UTDSHUDWidget::UpdateEnemyHealthDisplay()
 				)
 			)
 		);
+	}
+}
+
+void UTDSHUDWidget::RefreshStatsText()
+{
+	if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>()) {
+		CurrentRunStats = GI->GetCurrentRunStats();
+	}
+
+	// This function can be used to update any additional stats text on the HUD, such as enemies killed or objectives.
+	if (EnemiesKilledText) {
+		EnemiesKilledText->SetText(
+			FText::FromString(FString::Printf(TEXT("Enemies Eliminated: %d"), CurrentRunStats.EnemiesEliminated)));
+	}
+}
+
+void UTDSHUDWidget::SetObjectiveText(const FString& InObjectiveText)
+{
+	if (ObjectiveText)
+	{
+		ObjectiveText->SetText(FText::FromString(InObjectiveText));
 	}
 }

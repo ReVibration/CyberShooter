@@ -75,6 +75,11 @@ void ATDSPlayerController::ShowHUD()
 			ActiveHUD->SetPlayer(TDS);
 		}
 	}
+
+	if (ActiveHUD && !PendingObjectiveText.IsEmpty())
+	{
+		ActiveHUD->SetObjectiveText(PendingObjectiveText);
+	}
 }
 
 
@@ -269,4 +274,14 @@ void ATDSPlayerController::SetPauseMenuInputMode()
 	}
 
 	SetInputMode(Mode);
+}
+
+void ATDSPlayerController::SetHUDObjectiveText(const FString& InObjectiveText)
+{
+	PendingObjectiveText = InObjectiveText;
+
+	if (ActiveHUD)
+	{
+		ActiveHUD->SetObjectiveText(InObjectiveText);
+	}
 }

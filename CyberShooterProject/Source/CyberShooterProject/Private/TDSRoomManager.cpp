@@ -5,6 +5,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TDSGameInstance.h"
 #include "TDSEnemyCharacter.h"
+#include "TDSPlayerController.h"
 #include "TDSEnemySpawner.h"
 
 // Sets default values
@@ -19,6 +20,11 @@ ATDSRoomManager::ATDSRoomManager()
 void ATDSRoomManager::BeginPlay()
 {
 	Super::BeginPlay();
+
+    if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetWorld()->GetFirstPlayerController()))
+    {
+        PC->SetHUDObjectiveText(TEXT("Objective: Eliminate all enemies"));
+    }
 	
 	// Reset the count of alive enemies to 0 at the start of the room
 	AliveEnemyCount = 0;

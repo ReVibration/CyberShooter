@@ -123,22 +123,18 @@ void UTDSGameInstance::RecordRoomCleared()
 // This function should be called when the run ends to finalize the stats for that run.
 void UTDSGameInstance::FinaliseRunStats()
 {
-    UE_LOG(LogTemp, Warning, TEXT("FinaliseRunStats called. RunStartRealTimeSeconds = %f"), RunStartTimeSeconds);
 
     if (RunStartTimeSeconds <= 0.0)
     {
         CurrentRunStats.TimeSurvivedSeconds = 0.f;
-        UE_LOG(LogTemp, Warning, TEXT("RunStartRealTimeSeconds was invalid, setting time survived to 0."));
         return;
     }
 
     const double CurrentTime = FPlatformTime::Seconds();
-    UE_LOG(LogTemp, Warning, TEXT("Current platform time = %f"), CurrentTime);
 
     CurrentRunStats.TimeSurvivedSeconds =
         static_cast<float>(CurrentTime - RunStartTimeSeconds);
 
-    UE_LOG(LogTemp, Warning, TEXT("Calculated TimeSurvivedSeconds = %f"), CurrentRunStats.TimeSurvivedSeconds);
 }
 
 // This function returns a const reference to the CurrentRunStats struct, allowing other parts of the code to access the current run stats without modifying them.
@@ -151,5 +147,4 @@ const FTDSRunStats& UTDSGameInstance::GetCurrentRunStats() const
 void UTDSGameInstance::StartRunStatsTracking()
 {
     RunStartTimeSeconds = FPlatformTime::Seconds();
-    UE_LOG(LogTemp, Warning, TEXT("StartRunStatsTracking called. Start time = %f"), RunStartTimeSeconds);
 }

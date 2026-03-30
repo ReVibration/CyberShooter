@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "TDSRunStats.h"
 #include "TDSHUDWidget.generated.h"
 
 // Forward declarations
@@ -32,7 +33,11 @@ public:
 	// Function to show the enemy health bar when attacking an enemy, and hide it when not attacking
 	void ShowEnemyHealth(ATDSEnemyCharacter* HitEnemy);
 	void HideEnemyHealth();
+
+	/// Sets the run stats to be displayed on the game over screen and updates the text blocks accordingly.
+	void SetRunStats(const FTDSRunStats& InRunStats);
 	
+	void SetObjectiveText(const FString& InObjectText);
 protected:
 	// Tick function to update the health bar
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -63,10 +68,23 @@ protected:
 	// Timer handle for hiding the enemy health bar after a delay when not attacking
 	FTimerHandle EnemyHealthHideTimerHandle;
 
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* EnemiesKilledText = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* ObjectiveText = nullptr;
+
 	void UpdateHealthDisplay();
 	void UpdateEnemyHealthDisplay();
+	void RefreshStatsText();
+
+
+
 private:
 	// Reference to the player character to access health information
 	UPROPERTY()
 	ATDSCharacter* Player = nullptr;
+
+	// Cache the current run stats to avoid unnecessary updates to the stats text
+	FTDSRunStats CurrentRunStats;
 };

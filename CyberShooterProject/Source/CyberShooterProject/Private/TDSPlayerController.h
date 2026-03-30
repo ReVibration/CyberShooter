@@ -38,6 +38,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UTDSHUDWidget* GetHUDWidget() const { return ActiveHUD; }
 
+	// Function to update the objective text on the HUD
+	void SetHUDObjectiveText(const FString& InObjectiveText);
+
 protected:
 	
 
@@ -85,5 +88,9 @@ protected:
 
 	// A method to clear all UI
 	void ClearAllUI();
+
+private:
+
+	FString PendingObjectiveText;
 };
 

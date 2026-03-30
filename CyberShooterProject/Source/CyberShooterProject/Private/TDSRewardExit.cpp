@@ -4,6 +4,7 @@
 #include "TDSRewardExit.h"
 #include "Components/BoxComponent.h"
 #include "TDSCharacter.h"
+#include "TDSPlayerController.h"
 #include "TDSGameInstance.h"
 
 // Sets default values
@@ -29,6 +30,14 @@ ATDSRewardExit::ATDSRewardExit()
 void ATDSRewardExit::BeginPlay()
 {
 	Super::BeginPlay();
+
+
+
+	if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetWorld()->GetFirstPlayerController()))
+	{
+		PC->SetHUDObjectiveText(TEXT("Objective: Claim your reward to move on"));
+	}
+	
 
 	// Bind the overlap event to the OnTriggerEntered function
 	TriggerBox->OnComponentBeginOverlap.AddDynamic(this, &ATDSRewardExit::OnTriggerEntered);
