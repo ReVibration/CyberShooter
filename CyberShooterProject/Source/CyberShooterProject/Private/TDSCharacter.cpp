@@ -99,7 +99,7 @@ void ATDSCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// Initialize health
-	CurrentHealth = MaxHealth;
+	RestoreHealthFromGameInstance();
 
 	// Bind to take damage event
 	OnTakeAnyDamage.AddDynamic(this, &ATDSCharacter::HandleTakeAnyDamage);
@@ -357,6 +357,9 @@ void ATDSCharacter::HandleTakeAnyDamage(
 	// Decrease health and clamp to valid range
 	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
 
+	// Save updated health for the run
+	SaveHealthToGameInstance();
+
 	// Check for death
 	if(CurrentHealth <= 0.f)
 	{
@@ -370,6 +373,9 @@ void ATDSCharacter::Heal(float Amount)
 	if (Amount <= 0.f) return; // Ignore non-positive healing
 	// Increase health and clamp to valid range
 	CurrentHealth = FMath::Clamp(CurrentHealth + Amount, 0.f, MaxHealth);
+
+	// Save updated health for the run
+	SaveHealthToGameInstance();
 }
 
 bool ATDSCharacter::GetMouseAimPointOnPlayerPlane(APlayerController& PC, FVector& OutAimPoint) const
@@ -462,10 +468,42 @@ void ATDSCharacter::HandleDeath()
 
 }
 
+// Handles the pause input action
 void ATDSCharacter::HandlePausePressed()
 {
 	if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetController()))
 	{
 		PC->TogglePauseMenu();
+	}
+}
+
+// Restores health from the game instance if available, otherwise initializes it to max health and stores it in the game instance
+void ATDSCharacter::RestoreHealthFromGameInstance()
+{
+	if (UTDSGameInstance* GI = Cast<UTDSGameInstance>(GetGameInstance()))
+	{
+		if (GI->HasRunPlayerHealth())
+		{
+			MaxHealth = GI->GetRunMaxHealth();
+			CurrentHealth = GI->GetRunCurrentHealth();
+		}
+		else
+		{
+			CurrentHealth = MaxHealth;
+			GI->InitialiseRunPlayerHealth(MaxHealth);
+		}
+	}
+	else
+	{
+		CurrentHealth = MaxHealth;
+	}
+}
+
+// Saves the current health values to the game instance for persistence across levels
+void ATDSCharacter::SaveHealthToGameInstance()
+{
+	if (UTDSGameInstance* GI = Cast<UTDSGameInstance>(GetGameInstance()))
+	{
+		GI->SaveRunHealth(CurrentHealth, MaxHealth);
 	}
 }

@@ -44,6 +44,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	float GetMaxHealth() const { return MaxHealth; }
 
+
 	// Applies healing to the character, ensuring it does not exceed MaxHealth
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void Heal(float HealAmount);
@@ -207,4 +208,7 @@ private:
 
 	// Handles the character's death, including playing the death animation, spawning effects, and disabling input
 	void HandleDeath();
+
+	void RestoreHealthFromGameInstance();
+	void SaveHealthToGameInstance();
 };

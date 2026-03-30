@@ -69,4 +69,34 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Run")
 	int32 LastRewardRoomIndex = INDEX_NONE;
+
+	// Functions to manage the player's health during the run, these can be called from Blueprints.
+	UFUNCTION(BlueprintCallable)
+	void InitialiseRunPlayerHealth(float InMaxHealth);
+
+	UFUNCTION(BlueprintCallable)
+	void SaveRunHealth(float InCurrentHealth, float InMaxHealth);
+
+	UFUNCTION(BlueprintCallable)
+	bool HasRunPlayerHealth() const;
+
+	UFUNCTION(BlueprintCallable)
+	float GetRunCurrentHealth() const;
+
+	UFUNCTION(BlueprintCallable)
+	float GetRunMaxHealth() const;
+
+	UFUNCTION(BlueprintCallable)
+	void ClearRunPlayerHealth();
+
+private:
+	/// These variables are used to store the player's health information during the run, they are private and can only be accessed through the public functions defined above.
+	UPROPERTY()
+	bool bHasStoredRunPlayerHealth = false;
+
+	UPROPERTY()
+	float StoredRunCurrentHealth = 0.0f;
+
+	UPROPERTY()
+	float StoredRunMaxHealth = 0.0f;
 };

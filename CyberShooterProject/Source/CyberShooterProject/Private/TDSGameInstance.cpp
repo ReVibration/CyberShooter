@@ -20,6 +20,9 @@ void UTDSGameInstance::StartNewRun(int32 NewSeed)
     // Set the RunStartTimeSeconds to the current time in seconds from the world context, this will be used to calculate the time survived for the current run.
     StartRunStatsTracking();
 
+	// Clear health information for the new run by setting bHasStoredRunPlayerHealth to false and resetting the StoredRunCurrentHealth and StoredRunMaxHealth to 0
+	ClearRunPlayerHealth();
+
 	RunSeed = NewSeed;
 	CurrentRoomIndex = 0;
 	LastCombatRoomIndex = INDEX_NONE;
@@ -147,4 +150,49 @@ const FTDSRunStats& UTDSGameInstance::GetCurrentRunStats() const
 void UTDSGameInstance::StartRunStatsTracking()
 {
     RunStartTimeSeconds = FPlatformTime::Seconds();
+}
+
+// This function initializes the player's health for the current run by setting the StoredRunCurrentHealth and StoredRunMaxHealth to the provided InMaxHealth value
+// , and marking that we have stored player health information by setting bHasStoredRunPlayerHealth to true.
+void UTDSGameInstance::InitialiseRunPlayerHealth(float InMaxHealth)
+{
+    bHasStoredRunPlayerHealth = true;
+    StoredRunMaxHealth = FMath::Max(1.f, InMaxHealth);
+    StoredRunCurrentHealth = StoredRunMaxHealth;
+}
+
+// This function updates the player's health for the current run by setting the StoredRunCurrentHealth to the provided InCurrentHealth value, clamped between 0 and InMaxHealth, 
+// and updating the StoredRunMaxHealth to the provided InMaxHealth value. It also marks that we have stored player health information by setting bHasStoredRunPlayerHealth to true.
+void UTDSGameInstance::SaveRunHealth(float InCurrentHealth, float InMaxHealth)
+{
+    bHasStoredRunPlayerHealth = true;
+    StoredRunMaxHealth = FMath::Max(1.f, InMaxHealth);
+    StoredRunCurrentHealth = FMath::Clamp(InCurrentHealth, 0.f, StoredRunMaxHealth);
+}
+
+// This function returns true if we have stored player health information for the current run, which is indicated by the bHasStoredRunPlayerHealth boolean.
+// If this function returns false, it means that the player's health has not been initialized or set for the current run.
+bool UTDSGameInstance::HasRunPlayerHealth() const
+{
+    return bHasStoredRunPlayerHealth;
+}
+
+// This function returns the current health of the player for the current run, which is stored in the StoredRunCurrentHealth variable. 
+float UTDSGameInstance::GetRunCurrentHealth() const
+{
+    return StoredRunCurrentHealth;
+}
+
+// This function returns the maximum health of the player for the current run, which is stored in the StoredRunMaxHealth variable.
+float UTDSGameInstance::GetRunMaxHealth() const
+{
+    return StoredRunMaxHealth;
+}
+
+// This function clears the stored player health information for the current run by setting bHasStoredRunPlayerHealth to false and resetting the StoredRunCurrentHealth and StoredRunMaxHealth to 0.0f.
+void UTDSGameInstance::ClearRunPlayerHealth()
+{
+    bHasStoredRunPlayerHealth = false;
+    StoredRunCurrentHealth = 0.0f;
+    StoredRunMaxHealth = 0.0f;
 }
