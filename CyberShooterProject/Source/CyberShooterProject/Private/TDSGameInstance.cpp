@@ -17,8 +17,7 @@ void UTDSGameInstance::StartNewRun(int32 NewSeed)
     // Reset the run stats to their default values and set the RunStartTimeSeconds to 0 before starting a new run.
     ResetRunStats();
 
-    // Set the RunStartTimeSeconds to the current time in seconds from the world context, this will be used to calculate the time survived for the current run.
-    StartRunStatsTracking();
+
 
 	// Clear health information for the new run by setting bHasStoredRunPlayerHealth to false and resetting the StoredRunCurrentHealth and StoredRunMaxHealth to 0
 	ClearRunPlayerHealth();
@@ -104,7 +103,6 @@ void UTDSGameInstance::LoadNextRoom()
 void UTDSGameInstance::ResetRunStats()
 {
     CurrentRunStats = FTDSRunStats();
-    RunStartTimeSeconds = 0.f;
 }
 
 // Increment the EnemiesEliminated count in the CurrentRunStats struct by 1. 
@@ -121,35 +119,12 @@ void UTDSGameInstance::RecordRoomCleared()
     CurrentRunStats.RoomsCleared++;
 }
 
-// This function finalizes the run stats by calculating the total time survived in seconds based on the current time in the world and the RunStartTimeSeconds.
-// It updates the TimeSurvivedSeconds field in the CurrentRunStats struct with the calculated value. 
-// This function should be called when the run ends to finalize the stats for that run.
-void UTDSGameInstance::FinaliseRunStats()
-{
 
-    if (RunStartTimeSeconds <= 0.0)
-    {
-        CurrentRunStats.TimeSurvivedSeconds = 0.f;
-        return;
-    }
-
-    const double CurrentTime = FPlatformTime::Seconds();
-
-    CurrentRunStats.TimeSurvivedSeconds =
-        static_cast<float>(CurrentTime - RunStartTimeSeconds);
-
-}
 
 // This function returns a const reference to the CurrentRunStats struct, allowing other parts of the code to access the current run stats without modifying them.
 const FTDSRunStats& UTDSGameInstance::GetCurrentRunStats() const
 {
     return CurrentRunStats;
-}
-
-// This function starts tracking the run stats by setting the RunStartRealTimeSeconds to the current time in seconds using FPlatformTime::Seconds().
-void UTDSGameInstance::StartRunStatsTracking()
-{
-    RunStartTimeSeconds = FPlatformTime::Seconds();
 }
 
 // This function initializes the player's health for the current run by setting the StoredRunCurrentHealth and StoredRunMaxHealth to the provided InMaxHealth value

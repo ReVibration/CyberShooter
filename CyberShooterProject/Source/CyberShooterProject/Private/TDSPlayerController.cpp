@@ -85,10 +85,7 @@ void ATDSPlayerController::ShowHUD()
 
 void ATDSPlayerController::ShowGameOver()
 {
-	if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
-	{
-		GI->FinaliseRunStats();
-	}
+
 	// Remove HUD so it doesn't overlap/capture focus
 	HideHUD();
 

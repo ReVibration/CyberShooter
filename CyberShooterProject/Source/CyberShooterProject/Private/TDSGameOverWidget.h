@@ -27,15 +27,11 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* EnemiesEliminatedText;
 
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* TimeSurvivedText;
-
 private:
 	// Cache the run stats to avoid unnecessary updates
 	FTDSRunStats CachedRunStats;
 
 	// Update the text blocks with the current run stats
 	void RefreshStatsText();
-	FString FormatTime(float TotalSeconds) const;
 };
 

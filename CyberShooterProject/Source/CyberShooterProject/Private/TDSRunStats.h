@@ -15,6 +15,4 @@ struct FTDSRunStats
 	UPROPERTY(BlueprintReadOnly)
 	int32 EnemiesEliminated = 0;
 
-	UPROPERTY(BlueprintReadOnly)
-	float TimeSurvivedSeconds = 0.f;
 };
