@@ -53,7 +53,7 @@ protected:
 	bool bStartUnlocked = false;
 
 	// This variable determines whether the exit is unlocked or not.
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Exit")
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Exit")
 	bool bExitUnlocked = false;
 
 	// This variable determines whether the exit has been used or not. 
