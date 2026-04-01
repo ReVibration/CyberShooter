@@ -6,6 +6,7 @@
 #include "TDSGameInstance.h"
 #include "TDSEnemyCharacter.h"
 #include "TDSPlayerController.h"
+#include "TDSRewardExit.h"
 #include "TDSEnemySpawner.h"
 
 // Sets default values
@@ -20,6 +21,12 @@ ATDSRoomManager::ATDSRoomManager()
 void ATDSRoomManager::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// At the start of the room, lock the exit to prevent the player from leaving before clearing the room
+    if (RoomExit)
+    {
+        RoomExit->LockExit();
+    }
 
     if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetWorld()->GetFirstPlayerController()))
     {
@@ -142,8 +149,19 @@ void ATDSRoomManager::OnRoomCleared()
         return;
     }
 
-	// Increment the current room index and load the next room
-    GI->CurrentRoomIndex++;
-    GI->LoadNextRoom();
+	// Unlock the exit to allow the player to leave the room after clearing it
+    if (RoomExit)
+    {
+        RoomExit->UnlockExit();
+    }
+
+	// Update the HUD objective text to inform the player of the next objective after clearing the room
+    if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetWorld()->GetFirstPlayerController()))
+    {
+        PC->SetHUDObjectiveText(TEXT("Objective: Move to the green exit"));
+    }
+    
+	// Record the room cleared in the game instance to update the run stats
     GI->RecordRoomCleared();
+
 }

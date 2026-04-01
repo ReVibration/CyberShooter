@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "TDSEnemyCharacter.h"
+#include "TDSRewardExit.h"
 #include "TDSRoomManager.generated.h"
 
 
@@ -30,6 +31,10 @@ protected:
 
 	// This function will be called to spawn enemies in the room based on the current room index and the number of available spawners.
 	void SpawnRoomEnemies();
+
+	// This variable holds a reference to the reward exit in the room, which can be used to unlock it when the room is cleared.
+	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Room")
+	TObjectPtr<ATDSRewardExit> RoomExit;
 
 private:
 	// The number of alive enemies in the room. This will be updated as enemies are killed.
