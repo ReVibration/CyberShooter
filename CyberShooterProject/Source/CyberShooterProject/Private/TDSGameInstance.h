@@ -8,6 +8,10 @@
 #include "TDSRunStats.h"
 #include "TDSGameInstance.generated.h"
 
+// Forward declaration of UTDSRunData, which is used to manage the player's owned upgrades during a run. 
+// This is not included in this header to avoid circular dependencies, 
+// as UTDSRunData does not need to be directly referenced in most of the functions defined in this class.
+class UTDSRunData;
 
 UCLASS()
 class UTDSGameInstance : public UGameInstance
@@ -15,6 +19,11 @@ class UTDSGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+
+	// This is the run data object that will be used to manage the player's owned upgrades during the current run. 
+	// It is created when the game instance is initialized and reset when a new run is started.
+	UFUNCTION(BlueprintCallable)
+	UTDSRunData* GetRunData() const { return RunData; }
 
 	// This struct holds the current run stats
 	UPROPERTY(BlueprintReadOnly)
@@ -85,6 +94,11 @@ public:
 	void ClearRunPlayerHealth();
 
 private:
+
+	/// This is the run data object that will be used to manage the player's owned upgrades during the current run.
+	UPROPERTY()
+	TObjectPtr<UTDSRunData> RunData;
+
 	/// These variables are used to store the player's health information during the run, they are private and can only be accessed through the public functions defined above.
 	UPROPERTY()
 	bool bHasStoredRunPlayerHealth = false;

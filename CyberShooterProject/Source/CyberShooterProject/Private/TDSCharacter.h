@@ -16,6 +16,7 @@ class USpringArmComponent;
 class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
+class ATDSProjectile;
 
 UCLASS()
 class ATDSCharacter : public ACharacter
@@ -28,13 +29,21 @@ public:
 	
 	// ---------------- Public Functions & Properties ----------------
 
+	// This function will apply the recalculated stats from the upgrade component to the character's current stats, and will be called whenever an upgrade is applied or removed
+	void ApplyRecalculatedStats(
+		float NewMaxHealth,
+		float NewMoveSpeed,
+		float NewFireInterval,
+		float NewProjectileDamage,
+		float NewProjectileSpeed);
+
 	// The static mesh component for the player's weapon
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	UStaticMeshComponent* WeaponMesh;
 
 	// Returns the current health percentage
 	UFUNCTION(BlueprintCallable, Category = "Health")
-	float GetHealthPercent() const { return (MaxHealth > 0.f) ? (CurrentHealth / MaxHealth) : 0.f; }
+	float GetHealthPercent() const { return (CurrentMaxHealth > 0.f) ? (CurrentHealth / CurrentMaxHealth) : 0.f; }
 
 	// Returns the current health value
 	UFUNCTION(BlueprintCallable, Category = "Health")
@@ -42,8 +51,18 @@ public:
 
 	// Returns the maximum health value
 	UFUNCTION(BlueprintCallable, Category = "Health")
-	float GetMaxHealth() const { return MaxHealth; }
+	float GetMaxHealth() const { return CurrentMaxHealth; }
 
+
+	float GetBaseMaxHealth() const { return BaseMaxHealth; }
+	float GetBaseMoveSpeed() const { return BaseMoveSpeed; }
+	float GetBaseFireInterval() const { return BaseFireInterval; }
+	float GetBaseProjectileDamage() const { return BaseProjectileDamage; }
+	float GetBaseProjectileSpeed() const { return BaseProjectileSpeed; }
+
+	float GetCurrentFireInterval() const { return CurrentFireInterval; }
+	float GetCurrentProjectileDamage() const { return CurrentProjectileDamage; }
+	float GetCurrentProjectileSpeed() const { return CurrentProjectileSpeed; }
 
 	// Applies healing to the character, ensuring it does not exceed MaxHealth
 	UFUNCTION(BlueprintCallable, Category = "Health")
@@ -60,6 +79,10 @@ public:
 	// The animation montage to play when the character dies
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 	UAnimMontage* DeathMontage;
+
+	// The component that manages the character's upgrades and their effects on stats
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<class UTDSUpgradeComponent> UpgradeComponent;
 
 protected:
 	// Called when the game starts or when spawned
@@ -104,15 +127,25 @@ private:
 	UPROPERTY()
 	UTDSHUDWidget* HUDWidget = nullptr;
 
+
 	// --- Health ---
 
-	// The maximum health of the character
-	UPROPERTY(EditDefaultsOnly, Category = "Health")
-	float MaxHealth = 100.f;
+	UPROPERTY(EditDefaultsOnly, Category = "Stats|Base")
+	float BaseMaxHealth = 100.f;
 
-	// The current health of the character
+	UPROPERTY(VisibleAnywhere, Category = "Stats|Current")
+	float CurrentMaxHealth = 100.f;
+
 	UPROPERTY(VisibleAnywhere, Category = "Health")
-	float CurrentHealth;
+	float CurrentHealth = 0.f;
+
+	// --- Movement ---
+
+	UPROPERTY(EditDefaultsOnly, Category = "Stats|Base")
+	float BaseMoveSpeed = 600.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Stats|Current")
+	float CurrentMoveSpeed = 600.f;
 
 	// --- Camera ---
 
@@ -156,11 +189,27 @@ private:
 
 	// This allows us to change the projectile when we want to
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
-	TSubclassOf<AActor> ProjectileClass;
+	TSubclassOf<class ATDSProjectile> ProjectileClass;
 
 	// A property that can change the fire rate 
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
-	float FireInterval = 0.25f;
+	float BaseFireInterval = 0.25f;
+
+	// This is the current fire interval, which can be modified by upgrades and will be used to manage the firing rate
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	float CurrentFireInterval = BaseFireInterval;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Stats|Base")
+	float BaseProjectileDamage = 25.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Stats|Current")
+	float CurrentProjectileDamage = 25.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Stats|Base")
+	float BaseProjectileSpeed = 2000.f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Stats|Current")
+	float CurrentProjectileSpeed = 2000.f;
 
 	// Timer handle to manage the firing rate
 	FTimerHandle FireTimerHandle;
@@ -170,6 +219,9 @@ private:
 	// The camera shake class to use when taking damage
 	UPROPERTY(EditDefaultsOnly, Category = "Damage|Effects")
 	TSubclassOf<UCameraShakeBase> DamageCameraShakeClass;
+
+	// Tracks whether run health has been restored/initialized yet
+	bool bRunHealthInitialised = false;
 
 	// ---------------- Functions ----------------
 
@@ -211,4 +263,6 @@ private:
 
 	void RestoreHealthFromGameInstance();
 	void SaveHealthToGameInstance();
+
+
 };

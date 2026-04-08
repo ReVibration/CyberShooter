@@ -17,7 +17,9 @@ void UTDSGameInstance::StartNewRun(int32 NewSeed)
     // Reset the run stats to their default values and set the RunStartTimeSeconds to 0 before starting a new run.
     ResetRunStats();
 
-
+	// Create a new instance of the UTDSRunData class to manage the player's owned upgrades during the current run. 
+    // This will reset any existing run data and start fresh for the new run.
+    RunData = NewObject<UTDSRunData>(this);
 
 	// Clear health information for the new run by setting bHasStoredRunPlayerHealth to false and resetting the StoredRunCurrentHealth and StoredRunMaxHealth to 0
 	ClearRunPlayerHealth();

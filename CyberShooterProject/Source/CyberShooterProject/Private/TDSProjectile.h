@@ -18,6 +18,8 @@ public:
 	// Sets default values for this actor's properties
 	ATDSProjectile();
 
+	void InitialiseProjectile(float InDamage, float InSpeed);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -51,7 +53,7 @@ private:
     float LifeSeconds = 2.0f;
 
 	// Damage dealt by the projectile
-	UPROPERTY(EditDefaultSOnly, Category = "Damage")
+	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 	float Damage = 25.f;
 };
 
