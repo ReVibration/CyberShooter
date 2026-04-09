@@ -4,6 +4,7 @@
 #include "TDSGameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "TDSRunStats.h"
+#include "TDSRunData.h"
 
 // This function loads the main menu level when called.
 void UTDSGameInstance::LoadMainMenu()
@@ -20,6 +21,9 @@ void UTDSGameInstance::StartNewRun(int32 NewSeed)
 	// Create a new instance of the UTDSRunData class to manage the player's owned upgrades during the current run. 
     // This will reset any existing run data and start fresh for the new run.
     RunData = NewObject<UTDSRunData>(this);
+
+    UE_LOG(LogTemp, Warning, TEXT("TDSGameInstance Init: RunData created = %s"),
+        RunData ? TEXT("true") : TEXT("false"));
 
 	// Clear health information for the new run by setting bHasStoredRunPlayerHealth to false and resetting the StoredRunCurrentHealth and StoredRunMaxHealth to 0
 	ClearRunPlayerHealth();
@@ -172,4 +176,26 @@ void UTDSGameInstance::ClearRunPlayerHealth()
     bHasStoredRunPlayerHealth = false;
     StoredRunCurrentHealth = 0.0f;
     StoredRunMaxHealth = 0.0f;
+}
+
+void UTDSGameInstance::ResetRunData()
+{
+    if (!RunData)
+    {
+        RunData = NewObject<UTDSRunData>(this);
+    }
+
+    RunData->ResetRun();
+}
+
+UTDSRunData* UTDSGameInstance::GetRunData()
+{
+    if (!RunData)
+    {
+        RunData = NewObject<UTDSRunData>(this);
+
+        UE_LOG(LogTemp, Warning, TEXT("TDSGameInstance GetRunData: RunData was null, recreated it"));
+    }
+
+    return RunData;
 }

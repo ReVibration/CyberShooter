@@ -23,12 +23,14 @@ public:
 	// This is the run data object that will be used to manage the player's owned upgrades during the current run. 
 	// It is created when the game instance is initialized and reset when a new run is started.
 	UFUNCTION(BlueprintCallable)
-	UTDSRunData* GetRunData() const { return RunData; }
+	UTDSRunData* GetRunData();
 
 	// This struct holds the current run stats
 	UPROPERTY(BlueprintReadOnly)
 	FTDSRunStats CurrentRunStats;
 
+	UFUNCTION(BlueprintCallable)
+	void ResetRunData();
 
 	/// Functions to manage the run stats, these can be called from Blueprints or C++ code to update the stats during the run and to finalise them when the run ends.
 	void ResetRunStats();
