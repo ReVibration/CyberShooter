@@ -20,6 +20,11 @@ public:
 	// Resets the run data, clearing all owned upgrades and resetting any other run-specific data to its initial state. This should be called when starting a new run.
 	void ResetRun();
 
+	// Returns a debug string listing the upgrades currently owned by the player in this run, along with their stack counts. 
+	// This is intended for debugging purposes and may not be formatted nicely for display to the player.
+	UFUNCTION(BlueprintCallable, Category = "Upgrades")
+	FString GetOwnedUpgradesDebugString() const;
+
 	// Returns the list of upgrades currently owned by the player in this run, along with their stack counts. 
 	// This should generally not be modified directly; use GrantUpgrade and ResetRun to modify the owned upgrades.
 	const TArray<FTDSOwnedUpgrade>& GetOwnedUpgrades() const { return OwnedUpgrades; }

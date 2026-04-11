@@ -68,3 +68,34 @@ int32 UTDSRunData::GetStackCountForUpgrade(const UTDSUpgradeDefinition* UpgradeD
 
 	return 0;
 }
+
+FString UTDSRunData::GetOwnedUpgradesDebugString() const
+{
+	// Returns a debug string listing the upgrades currently owned by the player in this run, along with their stack counts.
+	if (OwnedUpgrades.Num() == 0)
+	{
+		return TEXT("No upgrades collected this run.");
+	}
+
+
+	FString Result = TEXT("Owned Upgrades:\n");
+
+	// Loop through the owned upgrades and add them to the result string. If an upgrade definition is invalid, indicate that in the string.
+	for (const FTDSOwnedUpgrade& Entry : OwnedUpgrades)
+	{
+		if (!IsValid(Entry.Definition))
+		{
+			Result += FString::Printf(TEXT("- Invalid Upgrade x%d\n"), Entry.StackCount);
+			continue;
+		}
+
+		const FString DisplayName = Entry.Definition->DisplayName.IsEmpty()
+			? Entry.Definition->GetName()
+			: Entry.Definition->DisplayName.ToString();
+
+		Result += FString::Printf(TEXT("- %s x%d\n"), *DisplayName, Entry.StackCount);
+	}
+
+	return Result;
+
+}
