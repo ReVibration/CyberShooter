@@ -25,6 +25,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Upgrade")
 	FOnUpgradeCollected OnUpgradeCollected;
 
+	// Function to set the upgrade definition for this pickup. This can be called when spawning the pickup to specify which upgrade it should grant.
+	void SetUpgradeDefinition(UTDSUpgradeDefinition* InUpgradeDefinition);
 
 protected:
 	// Called when the game starts or when spawned

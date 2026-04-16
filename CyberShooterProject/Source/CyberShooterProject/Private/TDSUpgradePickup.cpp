@@ -140,3 +140,8 @@ bool ATDSUpgradePickup::TryGrantUpgrade(ATDSCharacter* PlayerCharacter)
 
 	return bGranted;
 } 
+
+void ATDSUpgradePickup::SetUpgradeDefinition(UTDSUpgradeDefinition* InUpgradeDefinition)
+{
+	UpgradeDefinition = InUpgradeDefinition;
+}
