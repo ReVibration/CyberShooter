@@ -84,3 +84,14 @@ void ATDSProjectile::OnHit(
     Destroy();
 }
 
+void ATDSProjectile::InitialiseProjectile(float InDamage, float InSpeed)
+{
+    Damage = InDamage;
+
+    if (ProjectileMovement)
+    {
+        ProjectileMovement->InitialSpeed = InSpeed;
+        ProjectileMovement->MaxSpeed = InSpeed;
+        ProjectileMovement->Velocity = GetActorForwardVector() * InSpeed;
+    }
+}
