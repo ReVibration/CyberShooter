@@ -21,7 +21,8 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
-
+#include "TDSUpgradeComponent.h"
+#include "TDSProjectile.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
@@ -91,12 +92,31 @@ ATDSCharacter::ATDSCharacter()
 	WeaponMesh->SetupAttachment(GetMesh(), TEXT("WeaponSocket"));
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponMesh->SetGenerateOverlapEvents(false);
+
+	// Create the upgrade component
+	UpgradeComponent = CreateDefaultSubobject<UTDSUpgradeComponent>(TEXT("UpgradeComponent"));
 }
 
 // Called when the game starts or when spawned
 void ATDSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	CurrentMaxHealth = BaseMaxHealth;
+	CurrentMoveSpeed = BaseMoveSpeed;
+	CurrentFireInterval = BaseFireInterval;
+	CurrentProjectileDamage = BaseProjectileDamage;
+	CurrentProjectileSpeed = BaseProjectileSpeed;
+
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->MaxWalkSpeed = CurrentMoveSpeed;
+	}
+
+	if (UpgradeComponent)
+	{
+		UpgradeComponent->RefreshFromRunData();
+	}
 
 	// Initialize health
 	RestoreHealthFromGameInstance();
@@ -213,17 +233,19 @@ void ATDSCharacter::Move(const FInputActionValue& Value)
 // Handles starting the firing of projectiles
 void ATDSCharacter::StartFiring()
 {
-	// If our flag says "firing" but the timer isn't active, we got desynced.
-	// Re-sync so we don't require a second click.
 	if (bIsFiring && !GetWorldTimerManager().IsTimerActive(FireTimerHandle))
 	{
 		bIsFiring = false;
 	}
 
 	if (bIsFiring)
+	{
 		return;
+	}
 
 	bIsFiring = true;
+
+	const float FireInterval = FMath::Max(CurrentFireInterval, 0.01f);
 
 	// Fire immediately
 	FireOnce();
@@ -270,7 +292,17 @@ void ATDSCharacter::FireOnce()
 	Params.Instigator = this;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnLocation, SpawnRotation, Params);
+	ATDSProjectile* Projectile = GetWorld()->SpawnActor<ATDSProjectile>(
+		ProjectileClass,
+		SpawnLocation,
+		SpawnRotation,
+		Params
+	);
+
+	if (Projectile)
+	{
+		Projectile->InitialiseProjectile(CurrentProjectileDamage, CurrentProjectileSpeed);
+	}
 
 	// Spawn muzzle flash effect if we have one and the socket exists
 	if (MuzzleFlashEffect && WeaponMesh && WeaponMesh->DoesSocketExist(TEXT("Muzzle")))
@@ -355,7 +387,7 @@ void ATDSCharacter::HandleTakeAnyDamage(
 	}
 
 	// Decrease health and clamp to valid range
-	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
+	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, CurrentMaxHealth);
 
 	// Save updated health for the run
 	SaveHealthToGameInstance();
@@ -372,7 +404,7 @@ void ATDSCharacter::Heal(float Amount)
 {
 	if (Amount <= 0.f) return; // Ignore non-positive healing
 	// Increase health and clamp to valid range
-	CurrentHealth = FMath::Clamp(CurrentHealth + Amount, 0.f, MaxHealth);
+	CurrentHealth = FMath::Clamp(CurrentHealth + Amount, 0.f, CurrentMaxHealth);
 
 	// Save updated health for the run
 	SaveHealthToGameInstance();
@@ -484,19 +516,21 @@ void ATDSCharacter::RestoreHealthFromGameInstance()
 	{
 		if (GI->HasRunPlayerHealth())
 		{
-			MaxHealth = GI->GetRunMaxHealth();
-			CurrentHealth = GI->GetRunCurrentHealth();
+			CurrentHealth = FMath::Clamp(GI->GetRunCurrentHealth(), 0.f, CurrentMaxHealth);
 		}
 		else
 		{
-			CurrentHealth = MaxHealth;
-			GI->InitialiseRunPlayerHealth(MaxHealth);
+			CurrentHealth = CurrentMaxHealth;
+			GI->InitialiseRunPlayerHealth(CurrentMaxHealth);
 		}
 	}
 	else
 	{
-		CurrentHealth = MaxHealth;
+		CurrentHealth = CurrentMaxHealth;
 	}
+
+	bRunHealthInitialised = true;
+	SaveHealthToGameInstance();
 }
 
 // Saves the current health values to the game instance for persistence across levels
@@ -504,6 +538,50 @@ void ATDSCharacter::SaveHealthToGameInstance()
 {
 	if (UTDSGameInstance* GI = Cast<UTDSGameInstance>(GetGameInstance()))
 	{
-		GI->SaveRunHealth(CurrentHealth, MaxHealth);
+		GI->SaveRunHealth(CurrentHealth, CurrentMaxHealth);
+	}
+}
+
+// Applies recalculated stats to the character, ensuring they are within valid ranges and updating related properties like movement speed and health accordingly.
+void ATDSCharacter::ApplyRecalculatedStats(
+	float NewMaxHealth,
+	float NewMoveSpeed,
+	float NewFireInterval,
+	float NewProjectileDamage,
+	float NewProjectileSpeed)
+{
+	// Store the old max health before applying the new one, so we can adjust current health accordingly.
+	const float OldMaxHealth = CurrentMaxHealth;
+
+	// Clamp new values to valid ranges and apply them to the character's current stats.
+	CurrentMaxHealth = FMath::Max(1.f, NewMaxHealth);
+	CurrentMoveSpeed = FMath::Max(0.f, NewMoveSpeed);
+	CurrentFireInterval = FMath::Max(0.01f, NewFireInterval);
+	CurrentProjectileDamage = FMath::Max(0.f, NewProjectileDamage);
+	CurrentProjectileSpeed = FMath::Max(0.f, NewProjectileSpeed);
+
+	// Update movement speed in the character movement component
+	if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+	{
+		MoveComp->MaxWalkSpeed = CurrentMoveSpeed;
+	}
+
+	// Only adjust current health after the run health has been initialized.
+	// This avoids fake healing during first spawn before persistent health is restored.
+	if (bRunHealthInitialised)
+	{
+		const float MaxHealthDelta = CurrentMaxHealth - OldMaxHealth;
+
+		if (MaxHealthDelta > 0.f)
+		{
+			// Reward-style behaviour: gain the extra max health immediately
+			CurrentHealth = FMath::Clamp(CurrentHealth + MaxHealthDelta, 0.f, CurrentMaxHealth);
+		}
+		else
+		{
+			CurrentHealth = FMath::Clamp(CurrentHealth, 0.f, CurrentMaxHealth);
+		}
+
+		SaveHealthToGameInstance();
 	}
 }
