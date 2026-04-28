@@ -81,7 +81,7 @@ protected:
 
 	// Distance at which the AI can attack the player
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	float AttackRange = 300.f;
+	float AttackRange = 150.f;
 
 	// Damage dealt per attack
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")

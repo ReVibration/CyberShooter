@@ -80,7 +80,7 @@ protected:
 
 	// Radius around the player where the AI will try to position itself for combat
 	UPROPERTY(EditDefaultsOnly, Category="Combat|Slots")
-	float SlotRadius = 230.f;
+	float SlotRadius = 150.f;
 
 	// Slight random offset added to the AI's position when trying to occupy a combat slot, to prevent them from clustering too tightly
 	UPROPERTY(EditDefaultsOnly, Category = "Combat|Slots")
@@ -107,7 +107,7 @@ protected:
 
 	// Distance at which the AI can attack the player
 	UPROPERTY(EditDefaultsOnly, Category="Combat")
-	float AttackRange = 300.f;
+	float AttackRange = 150.f;
 
 	// Damage dealt per attack
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
@@ -123,7 +123,7 @@ protected:
 
 	// Distance at which the AI will stop moving towards the player
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	float StopDistance = 80.0f;
+	float StopDistance = 20.0f;
 
 private:
 

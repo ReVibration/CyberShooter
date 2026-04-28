@@ -43,8 +43,14 @@ ATDSEnemyCharacter::ATDSEnemyCharacter()
 	// Set the avoidance weight to prioritize avoiding other characters
 	GetCharacterMovement()->AvoidanceWeight = 0.4f;
 
-	// Set the capsule component to generate overlap events for detecting damage
+	// Set the capsule component to generate overlap events for detecting damage0,  
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn,ECR_Overlap);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+
+	if (GetMesh())
+	{
+		GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	}
 
 }
 
