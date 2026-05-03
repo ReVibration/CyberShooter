@@ -80,6 +80,16 @@ void ATDSProjectile::OnHit(
         UDamageType::StaticClass()
 	);
 
+    if (ImpactSound)
+    {
+        UGameplayStatics::PlaySoundAtLocation(
+            this,
+            ImpactSound,
+            GetActorLocation(),
+            ImpactSoundVolume
+        );
+    }
+
     // Later: apply damage here
     Destroy();
 }

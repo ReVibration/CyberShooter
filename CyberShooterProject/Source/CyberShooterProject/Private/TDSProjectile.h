@@ -8,6 +8,7 @@
 
 class USphereComponent;
 class UProjectileMovementComponent;
+class USoundBase;
 
 UCLASS()
 class ATDSProjectile : public AActor
@@ -23,6 +24,14 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// Sound to play when the projectile hits something
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Impact")
+	TObjectPtr<USoundBase> ImpactSound;
+
+	// Volume to play the impact sound at
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Impact", meta = (ClampMin = "0.0"))
+	float ImpactSoundVolume = 1.0f;
 
 private:	
 	

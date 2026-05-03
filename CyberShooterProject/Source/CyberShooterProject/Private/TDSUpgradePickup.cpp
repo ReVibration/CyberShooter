@@ -6,6 +6,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/SceneComponent.h"
 #include "TDSCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "TDSGameInstance.h"
 #include "TDSRunData.h"
 #include "TDSUpgradeDefinition.h"
@@ -41,18 +42,12 @@ void ATDSUpgradePickup::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Warning, TEXT("UpgradePickup BeginPlay: %s"), *GetName());
 	// Bind the overlap event to the OnOverlapBegin function. If the OverlapBox component is missing, log an error.
 	if (OverlapBox)
 	{
 		OverlapBox->OnComponentBeginOverlap.AddDynamic(this, &ATDSUpgradePickup::OnOverlapBegin);
+	}
 
-		UE_LOG(LogTemp, Warning, TEXT("UpgradePickup overlap bound: %s"), *GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("UpgradePickup has no OverlapBox: %s"), *GetName());
-	}
 }
 
 // On the overlap event.
@@ -64,8 +59,6 @@ void ATDSUpgradePickup::OnOverlapBegin(
 	bool bFromSweep,
 	const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Warning, TEXT("UpgradePickup overlap triggered. OtherActor: %s"),
-		OtherActor ? *OtherActor->GetName() : TEXT("None"));
 
 	// If the pickup has already been collected, do nothing
 	if (bCollected)
@@ -77,18 +70,21 @@ void ATDSUpgradePickup::OnOverlapBegin(
 	ATDSCharacter* PlayerCharacter = Cast<ATDSCharacter>(OtherActor);
 	if (!PlayerCharacter)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Overlap was not player character."));
 		return;
+	}
+
+	// If a collect sound is specified, play it at the pickup's location
+	if (CollectSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, CollectSound, GetActorLocation(), CollectSoundVolume);
 	}
 
 	// Try to grant the upgrade to the player character. If it fails (e.g. due to upgrade limits), do nothing
 	if (!TryGrantUpgrade(PlayerCharacter))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade failed."));
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Collected upgrade pickup: %s"), *UpgradeDefinition->DisplayName.ToString());
 
 	// Mark the pickup as collected, broadcast the event, and destroy the pickup if necessary
 	bCollected = true;
@@ -103,40 +99,30 @@ void ATDSUpgradePickup::OnOverlapBegin(
 
 bool ATDSUpgradePickup::TryGrantUpgrade(ATDSCharacter* PlayerCharacter)
 {
-	UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: entered"));
 
 	if (!PlayerCharacter)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: PlayerCharacter is null"));
 		return false;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: PlayerCharacter valid"));
 
 	if (!UpgradeDefinition)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: UpgradeDefinition is null"));
 		return false;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: UpgradeDefinition valid: %s"), *UpgradeDefinition->GetName());
 
 	UTDSGameInstance* GI = Cast<UTDSGameInstance>(GetGameInstance());
 	if (!GI)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: GameInstance cast failed"));
 		return false;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: GameInstance valid"));
 
 	UTDSRunData* RunData = GI->GetRunData();
 	if (!RunData)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: RunData is null"));
 		return false;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: RunData valid"));
 
 	const bool bGranted = RunData->GrantUpgrade(UpgradeDefinition);
-	UE_LOG(LogTemp, Warning, TEXT("TryGrantUpgrade: GrantUpgrade returned %s"), bGranted ? TEXT("true") : TEXT("false"));
 
 	return bGranted;
 } 

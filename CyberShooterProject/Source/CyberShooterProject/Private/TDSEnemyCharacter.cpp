@@ -97,6 +97,12 @@ void ATDSEnemyCharacter::HandleTakeAnyDamage(
 	// Reduce health by damage amount
 	CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
 
+	// Play hurt sound if assigned
+	if(HurtSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, HurtSound, GetActorLocation(), HurtSoundVolume);
+	}
+
 	if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetWorld()->GetFirstPlayerController()))
 	{
 		if (UTDSHUDWidget* HUD = PC->GetHUDWidget())
@@ -179,6 +185,12 @@ void ATDSEnemyCharacter::HandleDeath()
 	if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
 	{
 		GI->RecordEnemyEliminated();
+	}
+	
+	// Play death sound if assigned
+	if (DeathSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, DeathSound, GetActorLocation(), DeathSoundVolume);
 	}
 
 	// Play death montage if available

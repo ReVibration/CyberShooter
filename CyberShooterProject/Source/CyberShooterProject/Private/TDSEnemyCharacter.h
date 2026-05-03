@@ -7,6 +7,8 @@
 #include "Animation/AnimMontage.h"
 #include "TDSEnemyCharacter.generated.h"
 
+class USoundBase;
+
 // Forward declaration of the delegate
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDied, AActor*, DeadEnemy);
 
@@ -97,6 +99,20 @@ protected:
 		AActor* DamageCauser
 	);
 
+	// The sound to play when the enemy is hit
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Hurt")
+	TObjectPtr<USoundBase> HurtSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Hurt", meta = (ClampMin = "0.0"))
+	float HurtSoundVolume = 1.0f;
+
+	// The sound to play when the enemy dies
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Death")
+	TObjectPtr<USoundBase> DeathSound;
+
+	// The volume to play when the enemy dies
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Death", meta = (ClampMin = "0.0"))
+	float DeathSoundVolume = 1.0f;
 
 public:	
 	// Called every frame

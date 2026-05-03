@@ -3,6 +3,8 @@
 
 #include "TDSGameInstance.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sound/SoundBase.h"
+#include "Components/AudioComponent.h"
 #include "TDSRunStats.h"
 #include "TDSRunData.h"
 
@@ -198,4 +200,57 @@ UTDSRunData* UTDSGameInstance::GetRunData()
     }
 
     return RunData;
+}
+
+void UTDSGameInstance::PlayMenuMusic()
+{
+    PlayMusic(MenuMusic);
+}
+
+void UTDSGameInstance::PlayGameplayMusic()
+{
+    PlayMusic(GameplayMusic);
+}
+
+void UTDSGameInstance::StopMusic()
+{
+    if (CurrentMusicComponent)
+    {
+        CurrentMusicComponent->FadeOut(MusicFadeTime, 0.0f);
+        CurrentMusicComponent = nullptr;
+        CurrentMusic = nullptr;
+    }
+}
+
+void UTDSGameInstance::PlayMusic(USoundBase* NewMusic)
+{
+    if (!NewMusic)
+    {
+        return;
+    }
+
+    // Do not restart the same track if it is already playing.
+    if (CurrentMusic == NewMusic && CurrentMusicComponent && CurrentMusicComponent->IsPlaying())
+    {
+        return;
+    }
+
+    if (CurrentMusicComponent)
+    {
+        CurrentMusicComponent->FadeOut(MusicFadeTime, 0.0f);
+        CurrentMusicComponent = nullptr;
+    }
+
+    CurrentMusicComponent = UGameplayStatics::SpawnSound2D(
+        this,
+        NewMusic,
+        MusicVolume
+    );
+
+    CurrentMusic = NewMusic;
+
+    if (CurrentMusicComponent)
+    {
+        CurrentMusicComponent->FadeIn(MusicFadeTime, MusicVolume);
+    }
 }

@@ -13,6 +13,9 @@
 // as UTDSRunData does not need to be directly referenced in most of the functions defined in this class.
 class UTDSRunData;
 
+class USoundBase;
+class UAudioComponent;
+
 UCLASS()
 class UTDSGameInstance : public UGameInstance
 {
@@ -95,6 +98,28 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearRunPlayerHealth();
 
+	UFUNCTION(BlueprintCallable, Category = "Audio|Music")
+	void PlayMenuMusic();
+
+	UFUNCTION(BlueprintCallable, Category = "Audio|Music")
+	void PlayGameplayMusic();
+
+	UFUNCTION(BlueprintCallable, Category = "Audio|Music")
+	void StopMusic();
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Music")
+	TObjectPtr<USoundBase> MenuMusic;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Music")
+	TObjectPtr<USoundBase> GameplayMusic;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Music", meta = (ClampMin = "0.0"))
+	float MusicVolume = 0.6f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Music", meta = (ClampMin = "0.0"))
+	float MusicFadeTime = 1.0f;
+
 private:
 
 	/// This is the run data object that will be used to manage the player's owned upgrades during the current run.
@@ -110,4 +135,12 @@ private:
 
 	UPROPERTY()
 	float StoredRunMaxHealth = 0.0f;
+
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> CurrentMusicComponent;
+
+	UPROPERTY()
+	TObjectPtr<USoundBase> CurrentMusic;
+
+	void PlayMusic(USoundBase* NewMusic);
 };

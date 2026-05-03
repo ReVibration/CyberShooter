@@ -6,6 +6,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "GameFramework/Pawn.h"
 #include "TDSGameInstance.h"
 
@@ -50,6 +51,12 @@ void ATDSRewardExit::BeginPlay()
 // This function is called to unlock the exit, allowing the player to use it to progress to the next room.
 void ATDSRewardExit::UnlockExit()
 {
+	// Play the unlock sound if it is set
+	if (UnlockSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, UnlockSound, GetActorLocation(), UnlockSoundVolume);
+	}	
+
 	SetExitUnlocked(true);
 }
 

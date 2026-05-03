@@ -11,6 +11,7 @@ class UStaticMeshComponent;
 class USceneComponent;
 class UPrimitiveComponent;
 class AActor;
+class USoundBase;
 
 UCLASS()
 class ATDSRewardExit : public AActor
@@ -74,6 +75,14 @@ protected:
 	// Use this in Blueprint to swap materials, VFX, lights, widget prompts, etc.
 	UFUNCTION(BlueprintImplementableEvent, Category = "Exit")
 	void BP_OnExitStateChanged(bool bNowUnlocked);
+
+	// Sound to play when the exit is unlocked
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Exit")
+	TObjectPtr<USoundBase> UnlockSound;
+
+	// Volume to play the unlock sound at
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Exit", meta = (ClampMin = "0.0"))
+	float UnlockSoundVolume = 1.0f;
 
 private:
 	// This function will set the exit to be unlocked or locked and update the trigger state accordingly.

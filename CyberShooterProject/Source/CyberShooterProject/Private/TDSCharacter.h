@@ -94,6 +94,39 @@ protected:
 	// Called when the game starts to setup inputs
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	/// ---------------- Audio ----------------
+	// The sound to play when firing the weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Combat")
+	TObjectPtr<USoundBase> FireSound;
+
+	// The volume to play when firing the weapon
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Combat", meta = (ClampMin = "0.0"))
+	float FireSoundVolume = 1.0f;
+
+	// The pitch to play the fire sound at
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Combat", meta = (ClampMin = "0.0"))
+	float FireSoundPitch = 1.0f;
+
+	// The amount of random variation to apply to the fire sound's pitch each time it is played, 
+	// used to prevent the sound from becoming repetitive
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Combat", meta = (ClampMin = "0.0"))
+	float FireSoundPitchVariation = 0.05f;
+
+	// The sound to play when the character takes damage
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Damage")
+	TObjectPtr<USoundBase> DamageSound;
+
+	// The volume to play when the character takes damage
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Damage", meta = (ClampMin = "0.0"))
+	float DamageSoundVolume = 1.0f;
+
+	// The sound to play when the character dies
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Damage")
+	TObjectPtr<USoundBase> DeathSound;
+
+	// The volume to play when the character dies
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Damage", meta = (ClampMin = "0.0"))
+	float DeathSoundVolume = 1.0f;
 
 private:
 	// ---------------- Components ----------------

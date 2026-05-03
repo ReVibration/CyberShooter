@@ -9,6 +9,7 @@
 class UBoxComponent;
 class UTDSUpgradeDefinition;
 class ATDSCharacter;
+class USoundBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpgradeCollected, UTDSUpgradeDefinition*, CollectedUpgrade);
 
@@ -31,6 +32,14 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	// Sound to play when the upgrade is collected
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Upgrade")
+	TObjectPtr<USoundBase> CollectSound;
+
+	// Volume to play the collect sound at
+	UPROPERTY(EditDefaultsOnly, Category = "Audio|Upgrade", meta = (ClampMin = "0.0"))
+	float CollectSoundVolume = 1.0f;
 
 public:	
 

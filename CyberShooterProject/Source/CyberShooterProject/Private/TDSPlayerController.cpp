@@ -23,12 +23,22 @@ void ATDSPlayerController::BeginPlay()
 		// When inside the main menu show the main menu and set the input mode
 		ShowMainMenu();
 		SetMenuInputMode();
+
+		if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
+		{
+			GI->PlayMenuMusic();
+		}
 	}
 	else
 	{
 		// When outside of the main menu show the HUD and set the input mode
 		ShowHUD();
 		SetGameInputMode();
+
+		if (UTDSGameInstance* GI = GetGameInstance<UTDSGameInstance>())
+		{
+			GI->PlayGameplayMusic();
+		}
 	}
 }
 

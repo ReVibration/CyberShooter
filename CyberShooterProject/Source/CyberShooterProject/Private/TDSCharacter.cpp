@@ -29,6 +29,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "TDSHUDWidget.h"
 #include "Blueprint/UserWidget.h"
+#include "Sound/SoundBase.h"
 
 // Sets default values
 ATDSCharacter::ATDSCharacter()
@@ -330,6 +331,25 @@ void ATDSCharacter::FireOnce()
 		}
 	}
 
+	// Play fire sound if we have one
+	if (FireSound)
+	{
+		// Randomize the pitch slightly for variety
+		const float RandomPitch = FireSoundPitch + FMath::RandRange(
+			-FireSoundPitchVariation,
+			FireSoundPitchVariation
+		);
+
+
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			FireSound,
+			GetActorLocation(),
+			FireSoundVolume,
+			FireSoundPitch
+		);
+	}
+
 }
 
 
@@ -367,6 +387,18 @@ void ATDSCharacter::HandleTakeAnyDamage(
 
 	// If we're already dead, ignore further damage
 	if (bIsDead) return;
+
+	// Play damage sound if we have one
+	if (DamageSound)
+	{
+
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			DamageSound,
+			GetActorLocation(),
+			DamageSoundVolume
+		);
+	}
 
 	// Show damage flash on the player's HUD if we have a player controller
 	if (ATDSPlayerController* PC = Cast<ATDSPlayerController>(GetController()))
@@ -466,6 +498,17 @@ void ATDSCharacter::HandleDeath()
 	}
 
 	float DeathDelay = 1.0f;
+
+	// Play death sound if available
+	if (DeathSound)
+		{
+		UGameplayStatics::PlaySoundAtLocation(
+			this,
+			DeathSound,
+			GetActorLocation(),
+			DeathSoundVolume
+		);
+	}
 
 	// Play death animation if available
 	if (GetMesh())
