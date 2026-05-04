@@ -1,5 +1,7 @@
 # CyberShooter
 
+https://revibration.itch.io/cyber-shooter
+
 **CyberShooter** is a portfolio-focused roguelike top-down shooter prototype built in **Unreal Engine 5** using a C++-first architecture. The project focuses on responsive top-down combat, room-based run progression, upgrade rewards, enemy AI, and a complete playable build.
 
 ## Project Overview
