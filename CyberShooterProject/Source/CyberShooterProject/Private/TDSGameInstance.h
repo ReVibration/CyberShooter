@@ -107,6 +107,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Audio|Music")
 	void StopMusic();
 
+	virtual void Init() override;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Audio|Music")
 	TObjectPtr<USoundBase> MenuMusic;
@@ -143,4 +145,9 @@ private:
 	TObjectPtr<USoundBase> CurrentMusic;
 
 	void PlayMusic(USoundBase* NewMusic);
+
+	bool bIsLoadingRoom = false;
+
+	void HandlePostLoadMapWithWorld(UWorld* LoadedWorld);
+
 };

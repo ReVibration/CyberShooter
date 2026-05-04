@@ -6,6 +6,8 @@
 #include "Sound/SoundBase.h"
 #include "Components/AudioComponent.h"
 #include "TDSRunStats.h"
+#include "UObject/UObjectGlobals.h"
+#include "Engine/World.h"
 #include "TDSRunData.h"
 
 // This function loads the main menu level when called.
@@ -88,23 +90,40 @@ UTDSRoomDefinition* UTDSGameInstance::GetNextRoomDefinition()
     return CombatRooms[CombatIndex];
 }
 
-// This function loads the next room based on the current room index and the type of room that should be generated.
 void UTDSGameInstance::LoadNextRoom()
 {
-	// Get the next room definition using the GetNextRoomDefinition function. If it returns nullptr, log a warning and return without loading a new level.
-    UTDSRoomDefinition* NextRoom = GetNextRoomDefinition();
-    if (!NextRoom)
+    if (bIsLoadingRoom)
     {
+        UE_LOG(LogTemp, Warning, TEXT("LoadNextRoom ignored because a room is already loading."));
         return;
     }
+
+    bIsLoadingRoom = true;
+
+    UE_LOG(LogTemp, Warning, TEXT("LoadNextRoom called. CurrentRoomIndex = %d"), CurrentRoomIndex);
+    UE_LOG(LogTemp, Warning, TEXT("CombatRooms: %d | RewardRooms: %d"), CombatRooms.Num(), RewardRooms.Num());
+
+    UTDSRoomDefinition* NextRoom = GetNextRoomDefinition();
+
+    if (!NextRoom)
+    {
+        UE_LOG(LogTemp, Error, TEXT("LoadNextRoom failed: NextRoom is null."));
+        bIsLoadingRoom = false;
+        return;
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("Selected room definition: %s"), *NextRoom->GetName());
 
     if (NextRoom->LevelName.IsNone())
     {
+        UE_LOG(LogTemp, Error, TEXT("LoadNextRoom failed: LevelName is None on %s"), *NextRoom->GetName());
+        bIsLoadingRoom = false;
         return;
     }
 
-	// Load the level specified in the NextRoom's LevelName using UGameplayStatics::OpenLevel. This will transition the player to the new room.
-    UGameplayStatics::OpenLevel(GetWorld(), NextRoom->LevelName);
+    UE_LOG(LogTemp, Warning, TEXT("Opening level: %s"), *NextRoom->LevelName.ToString());
+
+    UGameplayStatics::OpenLevel(this, NextRoom->LevelName);
 }
 
 // This function resets the current run stats to their default values and sets the RunStartTimeSeconds to 0. 
@@ -253,4 +272,21 @@ void UTDSGameInstance::PlayMusic(USoundBase* NewMusic)
     {
         CurrentMusicComponent->FadeIn(MusicFadeTime, MusicVolume);
     }
+}
+
+void UTDSGameInstance::Init()
+{
+    Super::Init();
+
+    FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(
+        this,
+        &UTDSGameInstance::HandlePostLoadMapWithWorld
+    );
+}
+
+void UTDSGameInstance::HandlePostLoadMapWithWorld(UWorld* LoadedWorld)
+{
+    bIsLoadingRoom = false;
+
+    UE_LOG(LogTemp, Warning, TEXT("Map finished loading. Room loading lock reset."));
 }
